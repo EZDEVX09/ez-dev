@@ -57,10 +57,7 @@ function layout(env, { preheader, heading, paragraphs, button, footerNote }) {
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fb;padding:32px 16px"><tr><td align="center">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px">
 <tr><td style="padding:0 0 20px">
-  <table role="presentation" cellspacing="0" cellpadding="0"><tr>
-    <td style="width:34px;height:34px;border-radius:9px;background:#2563eb;text-align:center;font-weight:700;font-size:14px;color:#ffffff">EZ</td>
-    <td style="padding-left:10px;font-size:18px;font-weight:700;color:#07090d">EZ DEV</td>
-  </tr></table>
+  <img src="${ezdev}/assets/email-logo.png" width="150" height="30" alt="EZ DEV" style="display:block;border:0">
 </td></tr>
 <tr><td style="background:#ffffff;border-radius:18px;padding:36px 32px">
   <h1 style="margin:0 0 20px;font-size:24px;line-height:1.25;color:#07090d">${escapeHtml(heading)}</h1>

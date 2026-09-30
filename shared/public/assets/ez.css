@@ -86,20 +86,19 @@ code, pre { font-family: var(--mono); }
 /* Header */
 .site-header { border-bottom: 1px solid var(--border); position: sticky; top: 0; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); z-index: 20; }
 .header-row { display: flex; align-items: center; gap: 32px; min-height: 72px; }
-.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-strong); }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-strong); flex-shrink: 0; }
+.brand svg { height: 34px; width: auto; display: block; }
+/* Logos carry their own fills/strokes; don't inherit the icon stroke style. */
+.brand svg, .org-parent svg { stroke: none; stroke-width: 0; fill: none; }
 .brand:hover { color: var(--text-strong); }
-.brand-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: 14px; }
-.brand-name { font-family: var(--display); font-weight: 500; font-size: 20px; letter-spacing: .02em; }
-.brand-name b { font-weight: 700; }
-.site-footer .brand-mark { background: var(--blue); color: #fff; }
 .primary { display: flex; gap: 28px; flex: 1; }
 .nav-link { color: var(--muted); text-decoration: none; font-size: 15px; }
 .nav-link:hover { color: var(--text-strong); }
 .account { display: flex; align-items: center; gap: 16px; margin-left: auto; }
 @media (max-width: 860px) { .primary { display: none; } .header-row { gap: 16px; } }
-.brand-name, .nav-link, .btn { white-space: nowrap; }
+.nav-link, .btn { white-space: nowrap; }
 @media (max-width: 480px) {
-  .brand { gap: 8px; } .brand-mark { width: 30px; height: 30px; font-size: 12px; } .brand-name { font-size: 17px; }
+  .brand svg { height: 28px; }
   .account { gap: 10px; } .account .btn-sm { padding: 0 12px; }
 }
 @media (max-width: 430px) { .account .nav-link[href$="/login"], .account .nav-link[href*="/auth/start"] { display: none; } }
@@ -178,7 +177,7 @@ code, pre { font-family: var(--mono); }
 @media (max-width: 980px) { .light-band { grid-template-columns: minmax(0, 1fr); } }
 .org { display: flex; flex-direction: column; align-items: center; }
 .org-parent { width: 220px; padding: 20px; border-radius: 16px; background: var(--ink); color: var(--paper); display: flex; flex-direction: column; align-items: center; }
-.org-parent strong { font: 700 24px var(--display); }
+.org-parent svg { height: 30px; width: auto; display: block; margin-bottom: 6px; }
 .org-parent span { font: 12px var(--mono); color: #b7b4ac; }
 .org-stem { width: 2px; height: 32px; background: var(--ink); }
 .org-bar { width: 67%; height: 2px; background: var(--ink); }

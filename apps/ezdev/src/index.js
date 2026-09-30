@@ -13,6 +13,7 @@ import {
 } from '../../../shared/billing.js';
 import { PLANS, planFor, getUsage, monthPeriod, dayPeriod, productUrl } from '../../../shared/config.js';
 import { page, errorPage, icons, productIcon, flash } from '../../../shared/ui.js';
+import { lockupSvg } from '../../../shared/logo.js';
 
 const NAV = [
   { href: '/#products', label: 'Products' },
@@ -79,7 +80,7 @@ ${signedOut ? h`<div class="wrap">${flash('You have been signed out of every EZ 
       <a class="btn btn-dark" href="${start}">${user ? 'Open your dashboard' : 'Create an EZ DEV account'}</a>
     </div>
     <div class="org" role="img" aria-label="EZ DEV is the parent company of EZ APP, EZ SITE and EZ DEFENDER">
-      <div class="org-parent"><strong>EZ DEV</strong><span>PARENT COMPANY</span></div>
+      <div class="org-parent">${raw(lockupSvg('DEV', { height: 30 }).replace('role="img"', 'aria-hidden="true"'))}<span>PARENT COMPANY</span></div>
       <div class="org-stem"></div>
       <div class="org-bar"></div>
       <div class="org-kids">

@@ -2,6 +2,7 @@
 
 import { h, raw } from './http.js';
 import { PRODUCTS, productUrl } from './config.js';
+import { lockupSvg, PRODUCT_WORD } from './logo.js';
 
 const FONTS = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap';
 
@@ -24,9 +25,7 @@ export const productIcon = { ezapp: icons.app, ezsite: icons.site, ezdefender: i
 
 function brand(product, href) {
   const p = PRODUCTS[product];
-  const [ez, ...rest] = p.name.split(' ');
-  return h`<a class="brand" href="${href}" aria-label="${p.name} home">
-    <span class="brand-mark">EZ</span><span class="brand-name">${ez} <b>${rest.join(' ')}</b></span></a>`;
+  return h`<a class="brand" href="${href}" aria-label="${p.name} home">${raw(lockupSvg(PRODUCT_WORD[product], { height: 34 }).replace('role="img"', 'aria-hidden="true" focusable="false"').replace(/<title>.*?<\/title>/, ''))}</a>`;
 }
 
 /**
@@ -61,7 +60,15 @@ export function page({ env, product, title, user, body, nav = [], scripts = [], 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${fullTitle}</title>
 <meta name="description" content="${description || `${p.name}: ${p.tagline}.`}">
-<link rel="icon" href="/assets/favicon-${p.accent}.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta name="theme-color" content="#07090D">
+<meta property="og:site_name" content="${p.name}">
+<meta property="og:title" content="${fullTitle}">
+<meta property="og:description" content="${description || `${p.name}: ${p.tagline}.`}">
+<meta property="og:image" content="${productUrl(env, product)}/assets/og-${product}.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="${FONTS}">
