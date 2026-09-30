@@ -55,7 +55,7 @@ const BASE_CSP = [
   "script-src 'self'",
   "style-src 'self' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data:",
+  "img-src 'self' data: blob:",
   "connect-src 'self'",
   "frame-src 'self'",
   "frame-ancestors 'none'",

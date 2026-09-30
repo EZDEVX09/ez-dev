@@ -122,8 +122,9 @@ export class Browser {
     this.jar.set(host, jar);
   }
 
-  async request(url, { method = 'GET', form, json, headers = {}, origin, follow = false } = {}) {
+  async request(url, { method = 'GET', form, json, multipart, headers = {}, origin, follow = false } = {}) {
     let body;
+    if (multipart) body = multipart; // a FormData; Request sets the multipart Content-Type
     const h = { 'CF-Connecting-IP': this.ip, ...headers };
     if (form) { body = new URLSearchParams(form).toString(); h['Content-Type'] = 'application/x-www-form-urlencoded'; }
     if (json) { body = JSON.stringify(json); h['Content-Type'] = 'application/json'; }

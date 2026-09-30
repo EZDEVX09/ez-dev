@@ -3,6 +3,7 @@
 import { Router, assertSameOrigin, redirect } from './http.js';
 import { startSignIn, completeHandoff, getUser, destroyAllSessions, clearSessionCookie, safePath } from './auth.js';
 import { productUrl } from './config.js';
+import { mountAvatarRead } from './avatar.js';
 
 export function subsidiaryRouter(product) {
   const router = new Router();
@@ -20,6 +21,7 @@ export function subsidiaryRouter(product) {
     return redirect(`${productUrl(c.env, 'ezdev')}/?signed_out=1`, 303, { 'Set-Cookie': clearSessionCookie(c.env) });
   });
 
+  mountAvatarRead(router);
   router.get('/healthz', () => new Response('ok'));
   return router;
 }

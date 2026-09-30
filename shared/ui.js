@@ -3,6 +3,7 @@
 import { h, raw } from './http.js';
 import { PRODUCTS, productUrl } from './config.js';
 import { lockupSvg, PRODUCT_WORD } from './logo.js';
+import { avatarUrl } from './avatar.js';
 
 const FONTS = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap';
 
@@ -42,7 +43,7 @@ export function page({ env, product, title, user, body, nav = [], scripts = [], 
   const account = user
     ? h`<a class="nav-link" href="/dashboard">Dashboard</a>
         <details class="menu">
-          <summary class="avatar" aria-label="Account menu">${(user.name || user.email).slice(0, 1).toUpperCase()}</summary>
+          <summary class="avatar" aria-label="Account menu">${avatarUrl(user) ? h`<img src="${avatarUrl(user)}" alt="">` : (user.name || user.email).slice(0, 1).toUpperCase()}</summary>
           <div class="menu-panel">
             <div class="menu-head"><strong>${user.name}</strong><span>${user.email}</span></div>
             <a href="${ezdev}/account">EZ DEV account</a>

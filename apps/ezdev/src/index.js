@@ -14,6 +14,7 @@ import {
 import { PLANS, planFor, getUsage, monthPeriod, dayPeriod, productUrl } from '../../../shared/config.js';
 import { page, errorPage, icons, productIcon, flash } from '../../../shared/ui.js';
 import { lockupSvg } from '../../../shared/logo.js';
+import { mountAvatarRead, mountAvatarWrite, avatarUrl } from '../../../shared/avatar.js';
 
 const NAV = [
   { href: '/#products', label: 'Products' },
@@ -294,6 +295,20 @@ router.get('/account', async (c) => {
   <p class="eyebrow">Account</p>
   <h1 class="display-md">Account settings</h1>
   ${flash(msg, 'ok')}${flash(err)}
+  <div class="card" id="photo">
+    <h2 class="h3">Profile picture</h2>
+    <div class="photo-row">
+      <div class="avatar-lg" id="avatar-preview">${avatarUrl(user) ? h`<img src="${avatarUrl(user)}" alt="Your profile picture">` : h`<span aria-hidden="true">${user.name.slice(0, 1).toUpperCase()}</span>`}</div>
+      <div class="photo-actions">
+        <form method="post" action="/account/avatar" enctype="multipart/form-data" class="photo-form">
+          <label class="btn btn-ghost btn-sm file-btn">Choose picture<input id="avatar-input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required></label>
+          <button class="btn btn-sm" id="avatar-save" type="submit">Save picture</button>
+        </form>
+        ${avatarUrl(user) ? h`<form method="post" action="/account/avatar/delete"><button class="btn btn-danger btn-sm" type="submit">Remove</button></form>` : ''}
+        <p class="hint" id="avatar-status" role="status">JPEG, PNG or WebP. We crop it to a square and shrink it for you.</p>
+      </div>
+    </div>
+  </div>
   <form class="card form" method="post" action="/account/profile">
     <h2 class="h3">Profile</h2>
     <label for="name">Name</label><input id="name" name="name" maxlength="80" required value="${user.name}">
@@ -341,7 +356,7 @@ router.get('/account', async (c) => {
     <button class="btn btn-danger" type="submit">Delete my account</button>
   </form>
 </section>`;
-  return html(page({ env: c.env, product: 'ezdev', title: 'Account', user, body, nav: NAV }));
+  return html(page({ env: c.env, product: 'ezdev', title: 'Account', user, body, nav: NAV, scripts: ['/assets/account.js'] }));
 });
 
 router.post('/account/profile', async (c) => {
@@ -692,6 +707,9 @@ router.get('/.well-known/security.txt', (c) => new Response(
   `Contact: mailto:${supportEmail(c.env)}\nExpires: ${new Date(Date.now() + 180 * 864e5).toISOString()}\nPolicy: ${c.url.origin}/security\nPreferred-Languages: en\n`,
   { headers: { 'Content-Type': 'text/plain; charset=utf-8' } },
 ));
+
+mountAvatarRead(router);
+mountAvatarWrite(router, requireLocalUser);
 
 router.get('/healthz', () => new Response('ok'));
 

@@ -92,7 +92,7 @@ export async function getUser(req, env) {
   const row = await env.DB.prepare(
     `SELECT u.id, u.email, u.name, u.plan, u.created_at, u.email_verified_at, u.alert_emails,
             u.stripe_customer_id, u.stripe_subscription_id, u.subscription_status, u.current_period_end,
-            u.cancel_at_period_end, s.id AS session_id
+            u.cancel_at_period_end, u.avatar_version, s.id AS session_id
      FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.id = ? AND s.expires_at > ?`
   ).bind(await sha256Hex(token), now()).first();
