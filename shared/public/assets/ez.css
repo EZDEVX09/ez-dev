@@ -176,8 +176,6 @@ code { font-size: .92em; }
 .brand:hover { text-decoration: none; }
 .brand svg, .footer-gems svg, .mnav-product svg, .gem svg, svg.gem, .gem-core svg, .orbit-node svg { stroke: none; stroke-width: 0; fill: none; }
 .brand svg { height: 30px; width: auto; display: block; }
-.brand .ez-glyph, .footer-gems .ez-glyph, .mnav-product .ez-glyph, .gem .ez-glyph, .gem-core .ez-glyph, .orbit-node .ez-glyph { stroke: #fff; stroke-width: 2.7; }
-.brand .ez-word { stroke-width: 1.55; }
 .primary { display: flex; gap: 4px; flex: 1; padding: 4px; }
 .nav-link { color: var(--muted); font-size: 14.5px; font-weight: 500; white-space: nowrap; padding: 8px 14px; border-radius: 999px; transition: color .2s, background .2s; }
 .nav-link:hover { color: var(--ink); background: var(--panel-2); text-decoration: none; }
