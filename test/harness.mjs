@@ -2,7 +2,7 @@
 // platform can be tested (and previewed) without Cloudflare or npm packages.
 
 import { DatabaseSync } from 'node:sqlite';
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, extname, normalize } from 'node:path';
 
@@ -38,7 +38,12 @@ export class D1Shim {
     catch (e) { this.db.exec('ROLLBACK'); throw e; }
   }
   async exec(sql) { this.db.exec(sql); }
-  migrate() { this.db.exec(readFileSync(join(root, 'migrations', '0001_init.sql'), 'utf8')); return this; }
+  migrate() {
+    for (const f of readdirSync(join(root, 'migrations')).filter((x) => x.endsWith('.sql')).sort()) {
+      this.db.exec(readFileSync(join(root, 'migrations', f), 'utf8'));
+    }
+    return this;
+  }
 }
 
 // ---------- Static assets (what Cloudflare serves before the Worker runs) ----------

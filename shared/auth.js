@@ -90,7 +90,9 @@ export async function getUser(req, env) {
   const token = readCookie(req, sessionCookieName(env));
   if (!token || token.length > 100) return null;
   const row = await env.DB.prepare(
-    `SELECT u.id, u.email, u.name, u.plan, u.created_at, s.id AS session_id
+    `SELECT u.id, u.email, u.name, u.plan, u.created_at, u.email_verified_at, u.alert_emails,
+            u.stripe_customer_id, u.stripe_subscription_id, u.subscription_status, u.current_period_end,
+            u.cancel_at_period_end, s.id AS session_id
      FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.id = ? AND s.expires_at > ?`
   ).bind(await sha256Hex(token), now()).first();
@@ -173,4 +175,31 @@ export function safePath(p) {
   const s = String(p || '');
   if (!s.startsWith('/') || s.startsWith('//') || s.includes('\\') || /[\r\n]/.test(s)) return '/dashboard';
   return s;
+}
+
+// ---------- Email tokens (verification & password reset) ----------
+
+export async function createEmailToken(env, userId, kind, ttlSeconds) {
+  const token = randomId(32);
+  // Only one live token of each kind per user.
+  await env.DB.prepare('DELETE FROM email_tokens WHERE user_id = ? AND kind = ?').bind(userId, kind).run();
+  await env.DB.prepare('INSERT INTO email_tokens (token_hash, user_id, kind, expires_at) VALUES (?, ?, ?, ?)')
+    .bind(await sha256Hex(token), userId, kind, now() + ttlSeconds).run();
+  return token;
+}
+
+/** Returns the user id if the token is valid (without using it up). */
+export async function peekEmailToken(env, token, kind) {
+  if (!token || token.length > 100) return null;
+  const row = await env.DB.prepare('SELECT user_id FROM email_tokens WHERE token_hash = ? AND kind = ? AND used_at IS NULL AND expires_at > ?')
+    .bind(await sha256Hex(token), kind, now()).first();
+  return row ? row.user_id : null;
+}
+
+/** Uses the token up atomically and returns the user id, or null. */
+export async function consumeEmailToken(env, token, kind) {
+  if (!token || token.length > 100) return null;
+  const row = await env.DB.prepare('UPDATE email_tokens SET used_at = ? WHERE token_hash = ? AND kind = ? AND used_at IS NULL AND expires_at > ? RETURNING user_id')
+    .bind(now(), await sha256Hex(token), kind, now()).first();
+  return row ? row.user_id : null;
 }

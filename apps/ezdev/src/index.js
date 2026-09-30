@@ -1,10 +1,16 @@
 // EZ DEV — parent company site, accounts and single sign-on for the EZ family.
 
-import { h, html, serve, Router, Redirect, HttpError, assertSameOrigin, readForm, clientIp, randomId, now, redirect } from '../../../shared/http.js';
+import { h, raw, html, json, serve, Router, Redirect, HttpError, assertSameOrigin, readForm, clientIp, randomId, now, redirect } from '../../../shared/http.js';
 import {
   getUser, createSession, hashPassword, verifyPassword, validatePassword, normalizeEmail, rateLimit,
   destroyAllSessions, clearSessionCookie, issueHandoffCode, safePath,
+  createEmailToken, consumeEmailToken, peekEmailToken,
 } from '../../../shared/auth.js';
+import { sendTemplate } from '../../../shared/email.js';
+import {
+  billingEnabled, getPlanPrices, formatPrice, createCheckout, createPortal, applySubscription, fetchSubscription,
+  cancelSubscriptionNow, verifyWebhook, planName, formatDate, stripe,
+} from '../../../shared/billing.js';
 import { PLANS, planFor, getUsage, monthPeriod, dayPeriod, productUrl } from '../../../shared/config.js';
 import { page, errorPage, icons, productIcon, flash } from '../../../shared/ui.js';
 
@@ -16,6 +22,7 @@ const NAV = [
 ];
 
 const supportEmail = (env) => env.SUPPORT_EMAIL || 'ezdevsupport@proton.me';
+const checked = raw('checked');
 const router = new Router();
 
 // ---------- Landing ----------
@@ -120,7 +127,7 @@ function authForm({ mode, error, values = {}, next }) {
 <section class="auth wrap narrow pad-lg">
   <h1 class="display-sm">${isSignup ? 'Create your EZ DEV account' : 'Sign in to EZ DEV'}</h1>
   <p class="muted">${isSignup ? 'One account for EZ APP, EZ SITE and EZ DEFENDER.' : 'Welcome back.'}</p>
-  ${flash(error)}
+  ${flash(values.msg, 'ok')}${flash(error)}
   <form method="post" class="card form" action="/${mode}${next ? `?next=${encodeURIComponent(next)}` : ''}">
     ${isSignup ? h`<label for="name">Your name</label><input id="name" name="name" autocomplete="name" maxlength="80" required value="${values.name || ''}">` : ''}
     <label for="email">Email</label>
@@ -134,7 +141,7 @@ function authForm({ mode, error, values = {}, next }) {
   <p class="muted center">${isSignup
     ? h`Already have an account? <a href="/login${next ? `?next=${encodeURIComponent(next)}` : ''}">Sign in</a>`
     : h`New to EZ DEV? <a href="/signup${next ? `?next=${encodeURIComponent(next)}` : ''}">Create an account</a>`}</p>
-  ${isSignup ? '' : h`<p class="muted small center">Forgot your password? Email <a href="mailto:${values.support}">${values.support}</a> from your account address.</p>`}
+  ${isSignup ? '' : h`<p class="muted small center"><a href="/forgot">Forgot your password?</a></p>`}
 </section>`;
 }
 
@@ -166,13 +173,15 @@ router.post('/signup', async (c) => {
   await c.env.DB.prepare('INSERT INTO users (id, email, name, password_hash, plan, created_at) VALUES (?, ?, ?, ?, ?, ?)')
     .bind(id, email, values.name, await hashPassword(form.password), 'free', now()).run();
   const cookie = await createSession(c.env, id, 'ezdev');
+  const token = await createEmailToken(c.env, id, 'verify', 86400);
+  c.ctx.waitUntil(sendTemplate(c.env, 'welcomeVerify', email, { name: values.name, url: `${c.url.origin}/verify-email?token=${token}` }, id));
   return redirect(next ? safePath(next) : '/dashboard?welcome=1', 303, { 'Set-Cookie': cookie });
 });
 
 router.get('/login', async (c) => {
   const next = c.url.searchParams.get('next');
   if (await getUser(c.req, c.env)) throw new Redirect(next ? safePath(next) : '/dashboard');
-  return html(page({ env: c.env, product: 'ezdev', title: 'Sign in', body: authForm({ mode: 'login', next, values: { support: supportEmail(c.env) } }), nav: NAV }));
+  return html(page({ env: c.env, product: 'ezdev', title: 'Sign in', body: authForm({ mode: 'login', next, values: { msg: c.url.searchParams.get('msg') } }), nav: NAV }));
 });
 
 const DUMMY_HASH = 'pbkdf2$100000$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
@@ -181,7 +190,7 @@ router.post('/login', async (c) => {
   assertSameOrigin(c.req);
   const next = c.url.searchParams.get('next');
   const form = await readForm(c.req);
-  const values = { email: String(form.email || '').trim(), support: supportEmail(c.env) };
+  const values = { email: String(form.email || '').trim() };
   const fail = (error, status = 401) => html(page({ env: c.env, product: 'ezdev', title: 'Sign in', body: authForm({ mode: 'login', error, values, next }), nav: NAV }), status);
 
   const email = normalizeEmail(values.email) || '';
@@ -245,6 +254,11 @@ router.get('/dashboard', async (c) => {
   const body = h`
 <section class="wrap pad-lg">
   ${c.url.searchParams.get('welcome') ? flash(`Welcome to EZ DEV, ${user.name}! Your account works across all three products.`, 'ok') : ''}
+  ${flash(c.url.searchParams.get('msg'), 'ok')}
+  ${user.subscription_status === 'past_due' ? h`<div class="flash flash-error" role="alert">Your last payment failed. <a href="/account#billing">Update your payment method</a> to keep ${planName(user.plan)}.</div>` : ''}
+  ${!user.email_verified_at ? h`<form class="flash flash-info row-between" method="post" action="/account/resend-verification">
+      <span>Please confirm your email address. We sent a link to <strong>${user.email}</strong>.</span>
+      <button class="btn btn-ghost btn-sm" type="submit">Resend email</button></form>` : ''}
   <div class="page-head">
     <div><p class="eyebrow">EZ DEV dashboard</p><h1 class="display-md">Hi, ${user.name.split(' ')[0]}.</h1></div>
     <a class="btn btn-ghost" href="/account">Account settings</a>
@@ -283,8 +297,33 @@ router.get('/account', async (c) => {
     <h2 class="h3">Profile</h2>
     <label for="name">Name</label><input id="name" name="name" maxlength="80" required value="${user.name}">
     <label for="email">Email</label><input id="email" value="${user.email}" disabled>
-    <p class="hint">To change your email, contact support.</p>
+    <p class="hint">${user.email_verified_at ? 'Confirmed.' : 'Not confirmed yet.'} To change your email, contact support.</p>
     <button class="btn" type="submit">Save</button>
+  </form>
+  ${!user.email_verified_at ? h`<form class="card form" method="post" action="/account/resend-verification">
+    <h2 class="h3">Confirm your email</h2>
+    <p class="muted">We need a confirmed email to send security alerts and password resets.</p>
+    <button class="btn btn-ghost" type="submit">Send confirmation email</button>
+  </form>` : ''}
+  <div class="card" id="billing">
+    <h2 class="h3">Billing</h2>
+    <p class="plan-line"><span class="badge">${planName(user.plan)}</span>
+      ${user.subscription_status && user.subscription_status !== 'canceled'
+        ? h`<span class="muted">${user.subscription_status === 'past_due' ? 'Payment failed — please update your card.'
+            : user.cancel_at_period_end ? `Ends on ${formatDate(user.current_period_end)}.`
+            : user.current_period_end ? `Renews on ${formatDate(user.current_period_end)}.` : ''}</span>`
+        : h`<span class="muted">No paid subscription.</span>`}
+    </p>
+    <div class="cta-row">
+      ${user.stripe_customer_id ? h`<form method="post" action="/billing/portal"><button class="btn" type="submit">Manage billing &amp; invoices</button></form>` : ''}
+      ${user.plan === 'free' ? h`<a class="btn ${user.stripe_customer_id ? 'btn-ghost' : ''}" href="/pricing">Upgrade</a>` : ''}
+    </div>
+  </div>
+  <form class="card form" method="post" action="/account/notifications">
+    <h2 class="h3">Email notifications</h2>
+    <label class="checkbox"><input type="checkbox" name="alert_emails" value="1" ${user.alert_emails ? checked : ''}> <span>Email me when EZ DEFENDER monitoring finds a new problem on my sites</span></label>
+    <p class="hint">Account, security and billing emails are always sent.</p>
+    <button class="btn btn-ghost" type="submit">Save preferences</button>
   </form>
   <form class="card form" method="post" action="/account/password">
     <h2 class="h3">Password</h2>
@@ -327,6 +366,7 @@ router.post('/account/password', async (c) => {
   await c.env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(await hashPassword(form.password), user.id).run();
   await destroyAllSessions(c.env, user.id);
   const cookie = await createSession(c.env, user.id, 'ezdev');
+  c.ctx.waitUntil(sendTemplate(c.env, 'passwordChanged', user.email, {}, user.id));
   return redirect('/account?msg=' + encodeURIComponent('Password changed. Other devices were signed out.'), 303, { 'Set-Cookie': cookie });
 });
 
@@ -339,6 +379,11 @@ router.post('/account/delete', async (c) => {
   if (String(form.confirm || '').trim().toLowerCase() !== user.email.toLowerCase() || !(await verifyPassword(String(form.password || ''), row.password_hash))) {
     throw new Redirect('/account?error=' + encodeURIComponent('Email or password did not match. Your account was not deleted.'));
   }
+  if (user.stripe_subscription_id && user.subscription_status && user.subscription_status !== 'canceled' && billingEnabled(c.env)) {
+    try { await cancelSubscriptionNow(c.env, user.stripe_subscription_id); } catch {
+      throw new Redirect('/account?error=' + encodeURIComponent(`We couldn't cancel your subscription automatically. Please cancel it under Billing first, or contact ${supportEmail(c.env)}.`));
+    }
+  }
   await c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(user.id).run();
   return redirect('/?signed_out=1', 303, { 'Set-Cookie': clearSessionCookie(c.env) });
 });
@@ -348,33 +393,242 @@ router.post('/account/delete', async (c) => {
 router.get('/pricing', async (c) => {
   const user = await getUser(c.req, c.env);
   const current = user ? user.plan : null;
-  const prices = { free: '$0', pro: c.env.PRICE_PRO || '[YOUR PRICE]', business: c.env.PRICE_BUSINESS || '[YOUR PRICE]' };
+  let stripePrices = {};
+  try { stripePrices = await getPlanPrices(c.env); } catch (e) { console.error('Could not load prices', e.message); }
+  const display = (key) => key === 'free' ? '$0' : formatPrice(stripePrices[key]) || c.env[`PRICE_${key.toUpperCase()}`] || '[YOUR PRICE]';
+  const canBuy = (key) => billingEnabled(c.env) && !!stripePrices[key];
+  const hasSub = user && user.stripe_subscription_id && user.subscription_status && user.subscription_status !== 'canceled';
+
+  const action = (key, p) => {
+    if (current === key) return h`<span class="btn btn-ghost btn-block is-static">Your current plan</span>`;
+    if (key === 'free') {
+      if (!user) return h`<a class="btn btn-ghost btn-block" href="/signup">Start free</a>`;
+      return hasSub ? h`<form method="post" action="/billing/portal"><button class="btn btn-ghost btn-block" type="submit">Downgrade in billing</button></form>` : '';
+    }
+    if (!canBuy(key)) return h`<a class="btn btn-block" href="/contact?plan=${key}">Contact us to upgrade</a>`;
+    if (!user) return h`<a class="btn btn-block" href="/signup?next=${encodeURIComponent('/pricing')}">Get ${p.name}</a>`;
+    if (hasSub) return h`<form method="post" action="/billing/portal"><button class="btn btn-block" type="submit">Switch to ${p.name}</button></form>`;
+    return h`<form method="post" action="/billing/checkout"><input type="hidden" name="plan" value="${key}"><button class="btn btn-block" type="submit">Upgrade to ${p.name}</button></form>`;
+  };
+
   const body = h`
 <section class="wrap pad-lg">
   <p class="eyebrow">Pricing</p>
   <h1 class="display-md">One account. Every EZ product.</h1>
   <p class="lead">Every plan includes EZ APP, EZ SITE and EZ DEFENDER. AI builds are shared between EZ APP and EZ SITE.</p>
+  ${c.url.searchParams.get('canceled') ? flash('Checkout canceled. You have not been charged.', 'info') : ''}
   <div class="plan-grid">
     ${Object.entries(PLANS).map(([key, p]) => h`
     <div class="card plan ${key === 'pro' ? 'plan-featured' : ''}">
       <h2 class="h3">${p.name}</h2>
-      <p class="price">${prices[key]}<span class="muted small">${key === 'free' ? '' : ' / month'}</span></p>
+      <p class="price">${display(key)}<span class="muted small">${key === 'free' ? '' : ' / month'}</span></p>
       <ul class="check-list">
         <li>${p.aiGenerationsPerMonth} AI builds per month</li>
         <li>${p.projectsPerProduct} apps and ${p.projectsPerProduct} websites</li>
         <li>${p.scansPerDay} security scans per day</li>
         <li>${p.monitoredSites} monitored site${p.monitoredSites === 1 ? '' : 's'}</li>
       </ul>
-      ${current === key
-        ? h`<span class="btn btn-ghost btn-block is-static">Your current plan</span>`
-        : key === 'free'
-          ? h`<a class="btn btn-ghost btn-block" href="${user ? '/dashboard' : '/signup'}">${user ? 'Go to dashboard' : 'Start free'}</a>`
-          : h`<a class="btn btn-block" href="/contact?plan=${key}">Upgrade to ${p.name}</a>`}
+      ${action(key, p)}
     </div>`)}
   </div>
-  <p class="muted small">Online checkout is coming soon. To upgrade today, contact us and we'll switch your plan.</p>
+  <p class="muted small">Payments are handled securely by Stripe. Cancel or change plans any time from your account.</p>
 </section>`;
   return html(page({ env: c.env, product: 'ezdev', title: 'Pricing', user, body, nav: NAV }));
+});
+
+// ---------- Billing ----------
+
+router.post('/billing/checkout', async (c) => {
+  assertSameOrigin(c.req);
+  const user = await requireLocalUser(c);
+  const plan = String((await readForm(c.req)).plan || '');
+  if (user.stripe_subscription_id && user.subscription_status && user.subscription_status !== 'canceled') {
+    throw new Redirect(await createPortal(c.env, user, c.url.origin));
+  }
+  await rateLimit(c.env, `checkout:${user.id}`, 10, 3600);
+  throw new Redirect(await createCheckout(c.env, user, plan, c.url.origin));
+});
+
+router.post('/billing/portal', async (c) => {
+  assertSameOrigin(c.req);
+  const user = await requireLocalUser(c);
+  if (!user.stripe_customer_id) throw new Redirect('/pricing');
+  throw new Redirect(await createPortal(c.env, user, c.url.origin));
+});
+
+// Return from Checkout: sync immediately so the plan shows even before the webhook arrives.
+router.get('/billing/success', async (c) => {
+  const user = await requireLocalUser(c);
+  const id = c.url.searchParams.get('session_id') || '';
+  if (!/^cs_[A-Za-z0-9_]+$/.test(id)) throw new Redirect('/account#billing');
+  const session = await stripe(c.env, 'GET', `/checkout/sessions/${id}`);
+  if (session.client_reference_id !== user.id) throw new HttpError(403, 'That checkout belongs to another account.');
+  if (session.subscription) await syncSubscription(c.env, session.subscription);
+  const fresh = await c.env.DB.prepare('SELECT plan FROM users WHERE id = ?').bind(user.id).first();
+  throw new Redirect('/dashboard?msg=' + encodeURIComponent(`Thanks! You're on ${planName(fresh.plan)}.`));
+});
+
+router.post('/stripe/webhook', async (c) => {
+  const payload = await c.req.text();
+  const event = await verifyWebhook(c.env, payload, c.req.headers.get('Stripe-Signature'));
+  const fresh = await c.env.DB.prepare('INSERT OR IGNORE INTO stripe_events (id, type, created_at) VALUES (?, ?, ?)').bind(event.id, event.type, now()).run();
+  if (!fresh.meta.changes) return json({ received: true, duplicate: true });
+
+  try {
+    await handleStripeEvent(c.env, event);
+  } catch (err) {
+    // Let Stripe retry: forget the event so the retry is processed.
+    await c.env.DB.prepare('DELETE FROM stripe_events WHERE id = ?').bind(event.id).run();
+    throw err;
+  }
+  return json({ received: true });
+});
+
+async function handleStripeEvent(env, event) {
+  const obj = event.data.object;
+  switch (event.type) {
+    case 'checkout.session.completed': {
+      if (obj.client_reference_id && obj.customer) {
+        await env.DB.prepare('UPDATE users SET stripe_customer_id = COALESCE(stripe_customer_id, ?) WHERE id = ?').bind(obj.customer, obj.client_reference_id).run();
+      }
+      if (obj.subscription) await syncSubscription(env, obj.subscription);
+      break;
+    }
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated':
+    case 'customer.subscription.deleted':
+    case 'customer.subscription.paused':
+    case 'customer.subscription.resumed':
+      await syncSubscription(env, obj.id, event.type === 'customer.subscription.deleted' ? obj : null);
+      break;
+    case 'invoice.payment_failed': {
+      const user = await env.DB.prepare('SELECT id, email FROM users WHERE stripe_customer_id = ?').bind(obj.customer).first();
+      if (user) await sendTemplate(env, 'paymentFailed', user.email, {}, user.id);
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+/** Always re-reads the subscription from Stripe so out-of-order webhooks can't regress state. */
+async function syncSubscription(env, subscriptionId, deletedObject = null) {
+  const sub = deletedObject || await fetchSubscription(env, typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id);
+  const r = await applySubscription(env, sub);
+  if (!r || r.ignored || !r.changed) return;
+  if (r.plan !== 'free') {
+    await sendTemplate(env, 'planActivated', r.email, { planName: planName(r.plan), renews: formatDate(r.periodEnd) }, r.userId);
+  } else {
+    await sendTemplate(env, 'planCanceled', r.email, { planName: planName(r.prevPlan) }, r.userId);
+  }
+}
+
+// ---------- Email verification & password reset ----------
+
+router.get('/verify-email', async (c) => {
+  const userId = await consumeEmailToken(c.env, c.url.searchParams.get('token'), 'verify');
+  if (!userId) {
+    return html(page({ env: c.env, product: 'ezdev', title: 'Link expired', user: await getUser(c.req, c.env), nav: NAV, body: h`
+<section class="wrap narrow pad-lg center">
+  <h1 class="display-sm">That link has expired.</h1>
+  <p class="lead">Confirmation links work once, for 24 hours. Sign in and we'll send you a new one.</p>
+  <p><a class="btn" href="/dashboard">Go to dashboard</a></p>
+</section>` }), 400);
+  }
+  await c.env.DB.prepare('UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?').bind(now(), userId).run();
+  const current = await getUser(c.req, c.env);
+  throw new Redirect(current ? '/dashboard?msg=' + encodeURIComponent('Email confirmed. Thanks!') : '/login?msg=' + encodeURIComponent('Email confirmed. Please sign in.'));
+});
+
+router.post('/account/resend-verification', async (c) => {
+  assertSameOrigin(c.req);
+  const user = await requireLocalUser(c);
+  if (user.email_verified_at) throw new Redirect('/account?msg=' + encodeURIComponent('Your email is already confirmed.'));
+  await rateLimit(c.env, `verify-mail:${user.id}`, 3, 3600);
+  const token = await createEmailToken(c.env, user.id, 'verify', 86400);
+  await sendTemplate(c.env, 'verify', user.email, { url: `${c.url.origin}/verify-email?token=${token}` }, user.id);
+  throw new Redirect('/account?msg=' + encodeURIComponent(`Confirmation email sent to ${user.email}.`));
+});
+
+router.post('/account/notifications', async (c) => {
+  assertSameOrigin(c.req);
+  const user = await requireLocalUser(c);
+  const on = (await readForm(c.req)).alert_emails === '1';
+  await c.env.DB.prepare('UPDATE users SET alert_emails = ? WHERE id = ?').bind(on ? 1 : 0, user.id).run();
+  throw new Redirect('/account?msg=' + encodeURIComponent('Notification preferences saved.'));
+});
+
+function forgotPage(env, { msg, error, email = '' } = {}) {
+  return page({ env, product: 'ezdev', title: 'Reset password', nav: NAV, body: h`
+<section class="auth wrap narrow pad-lg">
+  <h1 class="display-sm">Reset your password</h1>
+  <p class="muted">Enter your account email and we'll send you a link to choose a new password.</p>
+  ${flash(msg, 'ok')}${flash(error)}
+  <form method="post" class="card form" action="/forgot">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required value="${email}">
+    <button class="btn btn-block" type="submit">Send reset link</button>
+  </form>
+  <p class="muted center"><a href="/login">Back to sign in</a></p>
+</section>` });
+}
+
+router.get('/forgot', (c) => html(forgotPage(c.env)));
+
+router.post('/forgot', async (c) => {
+  assertSameOrigin(c.req);
+  const form = await readForm(c.req);
+  const email = normalizeEmail(form.email);
+  try { await rateLimit(c.env, `forgot-ip:${clientIp(c.req)}`, 10, 900); } catch (e) { return html(forgotPage(c.env, { error: e.message }), 429); }
+  if (!email) return html(forgotPage(c.env, { error: 'Please enter a valid email address.', email: form.email }), 400);
+  const user = await c.env.DB.prepare('SELECT id, email FROM users WHERE email = ?').bind(email).first();
+  let limited = false;
+  try { await rateLimit(c.env, `forgot-email:${email}`, 3, 3600); } catch { limited = true; }
+  if (user && !limited) {
+    const token = await createEmailToken(c.env, user.id, 'reset', 3600);
+    c.ctx.waitUntil(sendTemplate(c.env, 'resetPassword', user.email, { url: `${c.url.origin}/reset?token=${token}` }, user.id));
+  }
+  // Same answer whether or not the account exists, so emails can't be discovered.
+  return html(forgotPage(c.env, { msg: `If an account exists for ${email}, a reset link is on its way. It works for 1 hour.` }));
+});
+
+function resetPage(env, { token, error }) {
+  return page({ env, product: 'ezdev', title: 'Choose a new password', nav: NAV, body: h`
+<section class="auth wrap narrow pad-lg">
+  <h1 class="display-sm">Choose a new password</h1>
+  ${flash(error)}
+  <form method="post" class="card form" action="/reset">
+    <input type="hidden" name="token" value="${token}">
+    <label for="password">New password</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="200" required>
+    <p class="hint">At least 10 characters. This signs you out on every device.</p>
+    <button class="btn btn-block" type="submit">Save new password</button>
+  </form>
+</section>` });
+}
+
+router.get('/reset', async (c) => {
+  const token = c.url.searchParams.get('token') || '';
+  if (!(await peekEmailToken(c.env, token, 'reset'))) {
+    return html(forgotPage(c.env, { error: 'That reset link has expired or was already used. Request a new one below.' }), 400);
+  }
+  return html(resetPage(c.env, { token }));
+});
+
+router.post('/reset', async (c) => {
+  assertSameOrigin(c.req);
+  const form = await readForm(c.req);
+  const token = String(form.token || '');
+  const pwErr = validatePassword(form.password);
+  if (pwErr) return html(resetPage(c.env, { token, error: pwErr }), 400);
+  const userId = await consumeEmailToken(c.env, token, 'reset');
+  if (!userId) return html(forgotPage(c.env, { error: 'That reset link has expired or was already used. Request a new one below.' }), 400);
+  await c.env.DB.prepare('UPDATE users SET password_hash = ?, email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?')
+    .bind(await hashPassword(form.password), now(), userId).run();
+  await destroyAllSessions(c.env, userId);
+  const user = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first();
+  c.ctx.waitUntil(sendTemplate(c.env, 'passwordChanged', user.email, {}, userId));
+  throw new Redirect('/login?msg=' + encodeURIComponent('Password updated. Please sign in with your new password.'));
 });
 
 router.get('/contact', async (c) => {
@@ -413,6 +667,7 @@ function infoPage(title, intro, sections) {
 router.get('/privacy', infoPage('Privacy Policy', 'Draft — replace with a policy reviewed by a lawyer before launch.', (env) => [
   ['What we collect', 'Your name, email address and a securely hashed password; the projects you create; the URLs you scan; and basic request logs.'],
   ['How we use it', 'To run EZ APP, EZ SITE and EZ DEFENDER for you. Prompts and project files you send to the AI builders are processed by our AI provider (Anthropic) to generate your project.'],
+  ['Payments and email', 'Payments are processed by Stripe; we never see or store your full card number. Account and alert emails are delivered by Resend.'],
   ['What we never do', 'We do not sell your data or use it for advertising.'],
   ['Your choices', 'You can delete your account and all of its data at any time from Account settings.'],
   ['Contact', `Questions: ${supportEmail(env)}.`],

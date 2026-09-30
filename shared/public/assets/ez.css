@@ -218,6 +218,9 @@ textarea { resize: vertical; line-height: 1.5; }
 .checkbox input { width: 20px; height: 20px; min-height: 0; margin-top: 3px; accent-color: var(--accent); }
 .flash { padding: 14px 18px; border-radius: 12px; margin: 16px 0; border: 1px solid; }
 .flash-error { background: color-mix(in srgb, var(--danger) 10%, transparent); border-color: color-mix(in srgb, var(--danger) 50%, transparent); color: #ffd2d2; }
+.flash-info { background: color-mix(in srgb, var(--blue) 10%, transparent); border-color: color-mix(in srgb, var(--blue) 40%, transparent); color: #d6e6ff; }
+.flash-info.row-between { display: flex; }
+.plan-line { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .flash-ok { background: color-mix(in srgb, var(--green) 10%, transparent); border-color: color-mix(in srgb, var(--green) 45%, transparent); color: #c9f5e5; }
 .field-error { color: #ffb3b3; font-size: 14px; min-height: 1em; margin: 8px 0 0; }
 .danger-zone { border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }

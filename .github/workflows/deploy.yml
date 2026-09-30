@@ -31,6 +31,8 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       EZ_DOMAIN: ${{ vars.EZ_DOMAIN }}
       CF_WORKERS_SUBDOMAIN: ${{ vars.CF_WORKERS_SUBDOMAIN }}
+      EZ_EMAIL_FROM: ${{ vars.EZ_EMAIL_FROM }}
+      STRIPE_PORTAL_CONFIG: ${{ vars.STRIPE_PORTAL_CONFIG }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -62,17 +64,13 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: Set Claude API key on the builders
+      - name: Upload secrets (Claude, Stripe, Resend)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::warning::ANTHROPIC_API_KEY secret not set: EZ APP and EZ SITE can't generate until you add it."
-            exit 0
-          fi
-          for app in ezapp ezsite; do
-            printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler secret put ANTHROPIC_API_KEY -c apps/$app/wrangler.json
-          done
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: node scripts/push-secrets.mjs
 
       - name: Smoke test
         run: |

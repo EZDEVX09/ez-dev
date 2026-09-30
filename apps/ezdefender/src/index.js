@@ -2,7 +2,8 @@
 
 import { h, html, serve, Redirect, HttpError, assertSameOrigin, readForm, randomId, now, timeAgo, json } from '../../../shared/http.js';
 import { getUser, requireUser } from '../../../shared/auth.js';
-import { planFor, getUsage, addUsage, dayPeriod } from '../../../shared/config.js';
+import { planFor, getUsage, addUsage, dayPeriod, productUrl } from '../../../shared/config.js';
+import { sendTemplate } from '../../../shared/email.js';
 import { page, errorPage, icons, flash } from '../../../shared/ui.js';
 import { subsidiaryRouter } from '../../../shared/subsidiary.js';
 import { scan, ScanError, GUIDES, normalizeTarget, normalizeDomain, checkVerification } from './scanner.js';
@@ -367,7 +368,7 @@ const GRADE_RANK = { 'A+': 6, A: 5, B: 4, C: 3, D: 2, F: 1 };
 export async function runMonitoring(env) {
   const batch = Number(env.MONITOR_BATCH || 1);
   const { results: due } = await env.DB.prepare(
-    `SELECT s.*, u.plan FROM sites s JOIN users u ON u.id = s.user_id
+    `SELECT s.*, u.plan, u.email, u.alert_emails, u.email_verified_at FROM sites s JOIN users u ON u.id = s.user_id
      WHERE s.monitor = 1 AND s.verified_at IS NOT NULL AND (s.last_scan_at IS NULL OR s.last_scan_at < ?)
      ORDER BY COALESCE(s.last_scan_at, 0) ASC LIMIT ?`
   ).bind(now() - 86400, batch).all();
@@ -390,6 +391,9 @@ export async function runMonitoring(env) {
     }
     for (const m of alerts) {
       await env.DB.prepare('INSERT INTO alerts (user_id, site_id, message, created_at) VALUES (?, ?, ?, ?)').bind(site.user_id, site.id, m, now()).run();
+    }
+    if (alerts.length && site.alert_emails && site.email_verified_at) {
+      await sendTemplate(env, 'defenderAlert', site.email, { domain: site.domain, messages: alerts, url: `${productUrl(env, 'ezdefender')}/sites/${site.id}` }, site.user_id);
     }
   }
   return due.length;

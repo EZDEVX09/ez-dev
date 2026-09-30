@@ -77,6 +77,8 @@ const vars = {
   COOKIE_SECURE: local ? 'false' : 'true',
   SUPPORT_EMAIL: cfg.supportEmail,
   CLAUDE_MODEL: process.env.EZ_CLAUDE_MODEL || cfg.claudeModel,
+  ...(process.env.EZ_EMAIL_FROM || domain ? { EMAIL_FROM: process.env.EZ_EMAIL_FROM || `EZ DEV <no-reply@${domain}>` } : {}),
+  ...(process.env.STRIPE_PORTAL_CONFIG ? { STRIPE_PORTAL_CONFIG: process.env.STRIPE_PORTAL_CONFIG } : {}),
 };
 
 for (const app of APPS) {
