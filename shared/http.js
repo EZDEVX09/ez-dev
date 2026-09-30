@@ -1,5 +1,7 @@
 // Tiny, dependency-free HTTP toolkit for Cloudflare Workers.
 
+import { allOrigins } from './config.js';
+
 export class HttpError extends Error {
   constructor(status, message, extra = {}) {
     super(message);
@@ -79,6 +81,13 @@ export function html(body, status = 200, extraHeaders = {}) {
   const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', ...extraHeaders });
   securityHeaders(headers);
   return new Response(String(body), { status, headers });
+}
+
+/** Lets a page's forms (and the redirects that follow them) reach the given extra origins. */
+export function allowFormTargets(res, origins) {
+  const csp = res.headers.get('Content-Security-Policy') || '';
+  res.headers.set('Content-Security-Policy', csp.replace("form-action 'self'", `form-action 'self' ${origins.join(' ')}`));
+  return res;
 }
 
 export function json(data, status = 200, extraHeaders = {}) {
@@ -167,19 +176,30 @@ export class Router {
 /** Wraps a router into a Worker fetch handler with uniform error handling. */
 export function serve(router, { renderError }) {
   return async (req, env, ctx) => {
+    let res;
     try {
-      return await router.handle(req, env, ctx);
+      res = await router.handle(req, env, ctx);
     } catch (err) {
-      if (err instanceof Redirect) return redirect(err.location, err.status, err.headers);
-      const status = err instanceof HttpError ? err.status : 500;
-      if (!(err instanceof HttpError)) console.error(err && err.stack || err);
-      const message = err instanceof HttpError ? err.message : 'Something went wrong on our side. Please try again.';
-      if (wantsJson(req) || new URL(req.url).pathname.startsWith('/api/')) {
-        return json({ error: message, ...(err.extra || {}) }, status);
-      }
-      return html(renderError(status, message, req, env), status);
+      res = errorResponse(err, req, env, renderError);
     }
+    // Sign-in, sign-out and the hero form redirect between the four EZ sites after a form
+    // is submitted; browsers apply form-action to those redirects, so allow exactly those origins.
+    if (res.headers.has('Content-Security-Policy') && env.EZDEV_URL) {
+      try { res = allowFormTargets(res, allOrigins(env)); } catch { /* immutable response */ }
+    }
+    return res;
   };
+}
+
+function errorResponse(err, req, env, renderError) {
+  if (err instanceof Redirect) return redirect(err.location, err.status, err.headers);
+  const status = err instanceof HttpError ? err.status : 500;
+  if (!(err instanceof HttpError)) console.error(err && err.stack || err);
+  const message = err instanceof HttpError ? err.message : 'Something went wrong on our side. Please try again.';
+  if (wantsJson(req) || new URL(req.url).pathname.startsWith('/api/')) {
+    return json({ error: message, ...(err.extra || {}) }, status);
+  }
+  return html(renderError(status, message, req, env), status);
 }
 
 // ---------- Misc ----------

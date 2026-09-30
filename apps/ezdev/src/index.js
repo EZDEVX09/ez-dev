@@ -1,6 +1,6 @@
 // EZ DEV — parent company site, accounts and single sign-on for the EZ family.
 
-import { h, raw, html, json, serve, Router, Redirect, HttpError, assertSameOrigin, readForm, clientIp, randomId, now, redirect } from '../../../shared/http.js';
+import { h, raw, html, json, allowFormTargets, serve, Router, Redirect, HttpError, assertSameOrigin, readForm, clientIp, randomId, now, redirect } from '../../../shared/http.js';
 import {
   getUser, createSession, hashPassword, verifyPassword, validatePassword, normalizeEmail, rateLimit,
   destroyAllSessions, clearSessionCookie, issueHandoffCode, safePath,
@@ -11,7 +11,7 @@ import {
   billingEnabled, getPlanPrices, formatPrice, createCheckout, createPortal, applySubscription, fetchSubscription,
   cancelSubscriptionNow, verifyWebhook, planName, formatDate, stripe,
 } from '../../../shared/billing.js';
-import { PLANS, planFor, getUsage, monthPeriod, dayPeriod, productUrl } from '../../../shared/config.js';
+import { PLANS, planFor, getUsage, monthPeriod, dayPeriod, productUrl, allOrigins } from '../../../shared/config.js';
 import { page, errorPage, icons, productIcon, flash } from '../../../shared/ui.js';
 import { showcase } from '../../../shared/visuals.js';
 import { lockupSvg } from '../../../shared/logo.js';
@@ -45,16 +45,31 @@ router.get('/', async (c) => {
   const ticker = ['EZ APP', 'EZ SITE', 'EZ DEFENDER', 'Build it', 'Launch it', 'Lock it down'];
   const body = h`
 ${signedOut ? h`<div class="wrap">${flash('You have been signed out of every EZ product.', 'ok')}</div>` : ''}
-<section class="ed-hero wrap">
-  <div class="ed-meta reveal"><span>EZ DEV</span><span>Parent company of EZ APP / EZ SITE / EZ DEFENDER</span><span>ezdevportal.com</span></div>
-  <h1 class="ed-title reveal reveal-2">Build it.<br>Launch it.<br><em>Lock it down.</em></h1>
-  <div class="ed-hero-foot reveal reveal-3">
-    <p class="lead">EZ DEV makes building software easy. One family of AI-powered tools to create your app, publish your website, and keep both secure. One account for all of it.</p>
-    <div class="cta-row">
-      <a class="btn btn-lg" href="${start}">${user ? 'Go to dashboard' : 'Create your account'} ${icons.arrow}</a>
-      <a class="btn btn-ghost btn-lg" href="#products">Explore the products</a>
+<section class="hx wrap">
+  <div class="hx-top reveal"><span class="hx-dot"></span><span>One account · Three products</span><span class="hx-top-r">EZ APP / EZ SITE / EZ DEFENDER</span></div>
+  <h1 class="hx-title reveal reveal-2">What will you <em>build</em> today?</h1>
+  <form class="hx-box reveal reveal-3" action="/start" method="get" id="hx-form">
+    <fieldset class="hx-tabs">
+      <legend class="sr-only">What do you want to do?</legend>
+      <label><input type="radio" name="mode" value="app" checked><span>Build an app</span></label>
+      <label><input type="radio" name="mode" value="site"><span>Make a website</span></label>
+      <label><input type="radio" name="mode" value="scan"><span>Scan my site</span></label>
+    </fieldset>
+    <div class="hx-input">
+      <label class="sr-only" for="hx-q">Describe what you want</label>
+      <textarea id="hx-q" name="q" rows="2" maxlength="4000" required placeholder="A habit tracker with streaks and a weekly chart"></textarea>
+      <button class="btn btn-lg hx-go" type="submit"><span id="hx-go-label">Build it</span> ${icons.arrow}</button>
     </div>
-  </div>
+    <div class="hx-foot">
+      <span class="hx-hint" id="hx-hint">EZ APP writes the code, shows a live preview, and keeps improving it as you ask.</span>
+      <span class="hx-kbd" aria-hidden="true">Free to start · No card needed</span>
+    </div>
+  </form>
+  <ol class="hx-index reveal reveal-4">
+    <li><a href="${url('ezapp')}"><span class="hx-n">01</span><strong>EZ APP</strong><span class="hx-d">Apps from a sentence</span>${icons.external}</a></li>
+    <li><a href="${url('ezsite')}"><span class="hx-n">02</span><strong>EZ SITE</strong><span class="hx-d">Websites, written &amp; designed</span>${icons.external}</a></li>
+    <li><a href="${url('ezdefender')}"><span class="hx-n">03</span><strong>EZ DEFENDER</strong><span class="hx-d">Security scans &amp; monitoring</span>${icons.external}</a></li>
+  </ol>
 </section>
 
 <div class="ed-ticker" aria-hidden="true"><div>${[...ticker, ...ticker, ...ticker, ...ticker].map((t) => h`<span>${t}</span>`)}</div></div>
@@ -124,7 +139,7 @@ ${signedOut ? h`<div class="wrap">${flash('You have been signed out of every EZ 
     </div>
   </div>
 </section>`;
-  return html(page({ env: c.env, product: 'ezdev', user, body, nav: NAV }));
+  return html(page({ env: c.env, product: 'ezdev', user, body, nav: NAV, scripts: ['/assets/hero.js'] }));
 });
 
 // ---------- Sign up / sign in ----------
@@ -716,6 +731,15 @@ router.get('/.well-known/security.txt', (c) => new Response(
 
 mountAvatarRead(router);
 mountAvatarWrite(router, requireLocalUser);
+
+// Hero prompt box → the right product, with the text pre-filled.
+router.get('/start', (c) => {
+  const mode = c.url.searchParams.get('mode');
+  const q = (c.url.searchParams.get('q') || '').trim().slice(0, 4000);
+  if (mode === 'scan') throw new Redirect(`${productUrl(c.env, 'ezdefender')}/dashboard${q ? `?url=${encodeURIComponent(q.slice(0, 300))}` : ''}`);
+  const product = mode === 'site' ? 'ezsite' : 'ezapp';
+  throw new Redirect(`${productUrl(c.env, product)}/dashboard${q ? `?prompt=${encodeURIComponent(q)}` : ''}`);
+});
 
 router.get('/healthz', () => new Response('ok'));
 

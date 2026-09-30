@@ -430,3 +430,32 @@ test('changing password signs out other sessions; deleting the account removes e
   const orphans = await stack.DB.prepare("SELECT COUNT(*) AS n FROM projects p LEFT JOIN users u ON u.id = p.user_id WHERE u.id IS NULL").first();
   assert.equal(orphans.n, 0);
 });
+
+test('hero prompt box sends people to the right product with their text filled in', async () => {
+  const b = new Browser(stack);
+  const home = await (await b.get(`${DEV}/`)).text();
+  assert.ok(home.includes('id="hx-form"') && home.includes('/assets/hero.js'));
+  const app = await b.get(`${DEV}/start?mode=app&q=${encodeURIComponent('A habit tracker')}`);
+  assert.equal(app.headers.get('Location'), `${APP}/dashboard?prompt=A%20habit%20tracker`);
+  const site = await b.get(`${DEV}/start?mode=site&q=bakery`);
+  assert.equal(site.headers.get('Location'), `${SITE}/dashboard?prompt=bakery`);
+  const scan = await b.get(`${DEV}/start?mode=scan&q=example.com`);
+  assert.equal(scan.headers.get('Location'), `${DEF}/dashboard?url=example.com`);
+
+  // Signed-in users land on the builder with the prompt pre-filled (and escaped)
+  await signup(b, { name: 'Hero User' });
+  const r = await b.get(`${APP}/dashboard?prompt=${encodeURIComponent('<b>tracker</b>')}`, { follow: true });
+  const html = await r.text();
+  assert.ok(html.includes('&lt;b&gt;tracker&lt;/b&gt;</textarea>'));
+});
+
+test('forms may redirect between the four EZ sites, and nowhere else (CSP form-action)', async () => {
+  const res = await new Browser(stack).get(`${DEV}/`);
+  const csp = res.headers.get('Content-Security-Policy');
+  for (const o of [DEV, APP, SITE, DEF]) assert.ok(csp.includes(o), o);
+  // Sign-in on EZ DEV and sign-out on the subsidiaries redirect across the EZ sites too
+  for (const u of [`${DEV}/login`, `${APP}/`, `${DEF}/`]) {
+    const c = (await new Browser(stack).get(u)).headers.get('Content-Security-Policy');
+    assert.ok(c.includes(`form-action 'self' ${DEV} ${APP} ${SITE} ${DEF}`), u);
+  }
+});

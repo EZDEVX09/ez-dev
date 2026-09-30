@@ -116,6 +116,7 @@ export function mountBuilder(router, cfg) {
     ).bind(user.id, kind).all();
     const used = await getUsage(c.env, user.id, 'ai_generation', monthPeriod());
     const err = c.url.searchParams.get('error');
+    const prefill = (c.url.searchParams.get('prompt') || '').slice(0, MAX_PROMPT);
 
     const body = h`
 <section class="wrap pad-lg">
@@ -133,7 +134,7 @@ export function mountBuilder(router, cfg) {
   <form class="card new-project" method="post" action="/projects">
     <h2 class="h3">Start a new ${cfg.noun}</h2>
     <label for="prompt">Describe what you want. Be as specific as you like.</label>
-    <textarea id="prompt" name="prompt" rows="4" maxlength="${MAX_PROMPT}" required placeholder="${cfg.placeholder}"></textarea>
+    <textarea id="prompt" name="prompt" rows="4" maxlength="${MAX_PROMPT}" required placeholder="${cfg.placeholder}" ${prefill ? raw('autofocus') : ''}>${prefill}</textarea>
     <div class="idea-row" aria-label="Ideas">
       ${cfg.ideas.map((i) => h`<button type="button" class="chip" data-idea="${i}">${i}</button>`)}
     </div>
