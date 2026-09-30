@@ -92,7 +92,7 @@ jobs:
         run: |
           sleep 5
           for url in ${{ steps.config.outputs.urls }}; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "$url/healthz")
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$url/healthz" || echo "unreachable")
             if [ "$code" = "200" ]; then
               echo "::notice::Live: $url"
             else
