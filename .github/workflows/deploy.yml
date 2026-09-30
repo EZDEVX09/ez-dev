@@ -43,8 +43,24 @@ jobs:
         run: |
           missing=0
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then echo "::error::Missing Actions secret CLOUDFLARE_API_TOKEN (Settings → Secrets and variables → Actions → Secrets tab → Repository secrets)."; missing=1; else echo "CLOUDFLARE_API_TOKEN: found (${#CLOUDFLARE_API_TOKEN} characters)"; fi
-          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then echo "::error::Missing CLOUDFLARE_ACCOUNT_ID (Actions secret or variable)."; missing=1; else echo "CLOUDFLARE_ACCOUNT_ID: found (${#CLOUDFLARE_ACCOUNT_ID} characters)"; fi
-          exit $missing
+          if [ "$missing" = 1 ]; then exit 1; fi
+          # Verify the token, and find the account ID from it when it isn't set.
+          verify=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify)
+          echo "$verify" | python3 -c "import sys,json; d=json.load(sys.stdin); print('Token status:', d.get('result',{}).get('status') or d.get('errors'))"
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            accounts=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts?per_page=50")
+            id=$(echo "$accounts" | python3 -c "
+          import sys,json
+          d=json.load(sys.stdin); r=d.get('result') or []
+          print(r[0]['id'] if len(r)==1 else '')
+          print(f'Accounts visible to token: {len(r)}', file=sys.stderr)")
+            if [ -z "$id" ]; then echo "::error::CLOUDFLARE_ACCOUNT_ID is missing and couldn't be found from the token. Add it as an Actions secret."; exit 1; fi
+            echo "::add-mask::$id"
+            echo "CLOUDFLARE_ACCOUNT_ID=$id" >> "$GITHUB_ENV"
+            echo "CLOUDFLARE_ACCOUNT_ID: found from the API token"
+          else
+            echo "CLOUDFLARE_ACCOUNT_ID: found (${#CLOUDFLARE_ACCOUNT_ID} characters)"
+          fi
 
       - name: Install Wrangler
         run: npm install --no-save wrangler@4
