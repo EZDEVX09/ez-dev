@@ -197,7 +197,7 @@ router.get('/scans/:id', async (c) => {
     <div class="report-meta">
       <p class="eyebrow">${r.deep ? 'Deep scan' : 'Quick scan'} · ${timeAgo(row.created_at)}</p>
       <h1 class="display-sm break">${r.finalUrl}</h1>
-      <p class="muted">Score ${r.score}/100 · <span class="c-fail">${counts.fail} failed</span> · <span class="c-warn">${counts.warn} warnings</span> · ${counts.pass} passed</p>
+      <p class="muted">Score ${r.score}/100 · <span class="${counts.fail ? 'c-fail' : ''}">${counts.fail} failed</span> · <span class="${counts.warn ? 'c-warn' : ''}">${counts.warn} warning${counts.warn === 1 ? '' : 's'}</span> · ${counts.pass} passed</p>
       <div class="cta-row">
         <form method="post" action="/scans"><input type="hidden" name="url" value="${r.url}"><button class="btn btn-sm" type="submit">Scan again</button></form>
         ${!verifiedSite && !r.deep ? h`<form method="post" action="/sites"><input type="hidden" name="domain" value="${host}"><button class="btn btn-ghost btn-sm" type="submit">Verify ownership for deep checks</button></form>` : ''}

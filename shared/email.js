@@ -44,32 +44,32 @@ export async function sendEmail(env, { to, subject, html, text, template, userId
 
 function layout(env, { preheader, heading, paragraphs, button, footerNote }) {
   const ezdev = productUrl(env, 'ezdev');
-  const p = paragraphs.map((t) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#2b2d33">${t}</p>`).join('');
+  const p = paragraphs.map((t) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#1f2430">${t}</p>`).join('');
   const btn = button
-    ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:8px 0 24px"><tr><td style="border-radius:10px;background:#16181d">
-         <a href="${escapeHtml(button.url)}" style="display:inline-block;padding:14px 24px;font-size:16px;font-weight:600;color:#c6f24e;text-decoration:none;border-radius:10px">${escapeHtml(button.label)}</a>
+    ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:8px 0 24px"><tr><td style="border-radius:10px;background:#2563eb">
+         <a href="${escapeHtml(button.url)}" style="display:inline-block;padding:14px 24px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px">${escapeHtml(button.label)}</a>
        </td></tr></table>
-       <p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#6b6860">Or paste this link into your browser:<br><span style="word-break:break-all;color:#45433e">${escapeHtml(button.url)}</span></p>`
+       <p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#5b6475">Or paste this link into your browser:<br><span style="word-break:break-all;color:#3a4352">${escapeHtml(button.url)}</span></p>`
     : '';
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(heading)}</title></head>
-<body style="margin:0;padding:0;background:#f2efe8;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
+<body style="margin:0;padding:0;background:#f3f6fb;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
 <div style="display:none;max-height:0;overflow:hidden">${escapeHtml(preheader || heading)}</div>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f2efe8;padding:32px 16px"><tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fb;padding:32px 16px"><tr><td align="center">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px">
 <tr><td style="padding:0 0 20px">
   <table role="presentation" cellspacing="0" cellpadding="0"><tr>
-    <td style="width:34px;height:34px;border-radius:9px;background:#c6f24e;text-align:center;font-weight:700;font-size:14px;color:#0c0e12">EZ</td>
-    <td style="padding-left:10px;font-size:18px;font-weight:700;color:#16181d">EZ DEV</td>
+    <td style="width:34px;height:34px;border-radius:9px;background:#2563eb;text-align:center;font-weight:700;font-size:14px;color:#ffffff">EZ</td>
+    <td style="padding-left:10px;font-size:18px;font-weight:700;color:#07090d">EZ DEV</td>
   </tr></table>
 </td></tr>
 <tr><td style="background:#ffffff;border-radius:18px;padding:36px 32px">
-  <h1 style="margin:0 0 20px;font-size:24px;line-height:1.25;color:#16181d">${escapeHtml(heading)}</h1>
+  <h1 style="margin:0 0 20px;font-size:24px;line-height:1.25;color:#07090d">${escapeHtml(heading)}</h1>
   ${p}${btn}
-  ${footerNote ? `<p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:#6b6860">${footerNote}</p>` : ''}
+  ${footerNote ? `<p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:#5b6475">${footerNote}</p>` : ''}
 </td></tr>
-<tr><td style="padding:20px 8px;font-size:12px;line-height:1.5;color:#6b6860;text-align:center">
+<tr><td style="padding:20px 8px;font-size:12px;line-height:1.5;color:#5b6475;text-align:center">
   EZ DEV · the parent company of EZ APP, EZ SITE and EZ DEFENDER<br>
-  <a href="${ezdev}/account" style="color:#6b6860">Account settings</a> · <a href="${ezdev}/contact" style="color:#6b6860">Contact</a>
+  <a href="${ezdev}/account" style="color:#5b6475">Account settings</a> · <a href="${ezdev}/contact" style="color:#5b6475">Contact</a>
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -194,7 +194,7 @@ export const templates = {
           `<ul style="margin:0;padding-left:20px">${messages.map((m) => `<li style="margin-bottom:6px">${e(m)}</li>`).join('')}</ul>`,
         ],
         button: { label: 'See the full report', url },
-        footerNote: `You get these because monitoring is on for ${e(domain)}. Turn alert emails off in <a href="${productUrl(env, 'ezdev')}/account" style="color:#6b6860">account settings</a>.`,
+        footerNote: `You get these because monitoring is on for ${e(domain)}. Turn alert emails off in <a href="${productUrl(env, 'ezdev')}/account" style="color:#5b6475">account settings</a>.`,
       }),
     };
   },
