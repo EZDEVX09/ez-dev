@@ -713,6 +713,16 @@ mountAvatarWrite(router, requireLocalUser);
 
 router.get('/healthz', () => new Response('ok'));
 
+const handle = serve(router, { renderError: (status, message, req, env) => errorPage(env, 'ezdev', status, message) });
+
 export default {
-  fetch: serve(router, { renderError: (status, message, req, env) => errorPage(env, 'ezdev', status, message) }),
+  fetch(req, env, ctx) {
+    // www.<domain> → <domain>
+    const url = new URL(req.url);
+    if (url.hostname.startsWith('www.')) {
+      url.hostname = url.hostname.slice(4);
+      return Response.redirect(url.toString(), 301);
+    }
+    return handle(req, env, ctx);
+  },
 };

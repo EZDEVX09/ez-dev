@@ -92,7 +92,9 @@ for (const app of APPS) {
     assets: { directory: '../../shared/public', binding: 'ASSETS' },
     d1_databases: [{ binding: 'DB', database_name: cfg.d1DatabaseName, database_id: dbId, migrations_dir: '../../migrations' }],
     vars,
-    ...(domain ? { routes: [{ pattern: app.sub ? `${app.sub}.${domain}` : domain, custom_domain: true }] } : {}),
+    ...(domain ? { routes: app.sub
+      ? [{ pattern: `${app.sub}.${domain}`, custom_domain: true }]
+      : [{ pattern: domain, custom_domain: true }, { pattern: `www.${domain}`, custom_domain: true }] } : {}),
     ...(app.dir === 'ezdefender' ? { triggers: { crons: ['*/10 * * * *'] } } : {}),
     ...(local ? { dev: { port: app.port } } : {}),
   };
