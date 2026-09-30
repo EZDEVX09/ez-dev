@@ -41,81 +41,85 @@ router.get('/', async (c) => {
   ];
   const signedOut = c.url.searchParams.get('signed_out');
 
+  const name = (k) => (k === 'ezapp' ? 'EZ APP' : k === 'ezsite' ? 'EZ SITE' : 'EZ DEFENDER');
+  const ticker = ['EZ APP', 'EZ SITE', 'EZ DEFENDER', 'Build it', 'Launch it', 'Lock it down'];
   const body = h`
 ${signedOut ? h`<div class="wrap">${flash('You have been signed out of every EZ product.', 'ok')}</div>` : ''}
-<section class="hero wrap">
-  <p class="pill reveal"><span class="dot"></span>The parent company of EZ APP · EZ SITE · EZ DEFENDER</p>
-  <h1 class="display-xl reveal reveal-2">Build it. Launch it.<br><span class="accent-text">Lock it down.</span></h1>
-  <p class="lead reveal reveal-3">EZ DEV makes building software easy. One family of AI-powered tools to create your app, publish your website, and keep both secure. One account for all of it.</p>
-  <div class="cta-row reveal reveal-3">
-    <a class="btn btn-lg" href="#products">Explore the products ${icons.arrow}</a>
-    <a class="btn btn-ghost btn-lg" href="${start}">${user ? 'Go to dashboard' : 'Create your account'}</a>
+<section class="ed-hero wrap">
+  <div class="ed-meta reveal"><span>EZ DEV</span><span>Parent company of EZ APP / EZ SITE / EZ DEFENDER</span><span>ezdevportal.com</span></div>
+  <h1 class="ed-title reveal reveal-2">Build it.<br>Launch it.<br><em>Lock it down.</em></h1>
+  <div class="ed-hero-foot reveal reveal-3">
+    <p class="lead">EZ DEV makes building software easy. One family of AI-powered tools to create your app, publish your website, and keep both secure. One account for all of it.</p>
+    <div class="cta-row">
+      <a class="btn btn-lg" href="${start}">${user ? 'Go to dashboard' : 'Create your account'} ${icons.arrow}</a>
+      <a class="btn btn-ghost btn-lg" href="#products">Explore the products</a>
+    </div>
   </div>
-  ${showcase('ezdev')}
 </section>
 
-<section id="products" class="wrap pad-lg">
-  <div class="section-head">
-    <div>
-      <p class="eyebrow">01 — The EZ family</p>
-      <h2 class="display-md">Three companies. One mission.</h2>
-    </div>
-    <p class="muted measure">Each EZ subsidiary focuses on one job and does it well. Use one, or run all three together.</p>
-  </div>
-  <div class="product-grid">
-    ${products.map((p) => h`
-    <article class="card product-card accent-${p.accent}">
-      <div class="product-top"><span class="icon-tile">${productIcon[p.key]}</span><span class="mono muted small">${p.label}</span></div>
-      <h3 class="product-name">${p.key === 'ezapp' ? 'EZ APP' : p.key === 'ezsite' ? 'EZ SITE' : 'EZ DEFENDER'}</h3>
+<div class="ed-ticker" aria-hidden="true"><div>${[...ticker, ...ticker, ...ticker, ...ticker].map((t) => h`<span>${t}</span>`)}</div></div>
+
+<section class="wrap ed-section">${showcase('ezdev')}</section>
+
+<section id="products" class="wrap ed-section">
+  <header class="ed-head">
+    <span class="ed-num">(01) The EZ family</span>
+    <h2 class="ed-h2">Three companies.<br><em>One mission.</em></h2>
+    <p>Each EZ subsidiary focuses on one job and does it well. Use one, or run all three together.</p>
+  </header>
+  <div class="ed-products">
+    ${products.map((p, i) => h`
+    <article class="ed-product">
+      <div class="ed-product-top"><span>0${i + 1}</span><span>${p.label}</span></div>
+      <h3>${name(p.key)}</h3>
       <p>${p.desc}</p>
-      <ul class="arrow-list">${p.feats.map((f) => h`<li>${f}</li>`)}</ul>
-      <a class="btn btn-tint" href="${url(p.key)}">Visit ${p.key === 'ezapp' ? 'EZ APP' : p.key === 'ezsite' ? 'EZ SITE' : 'EZ DEFENDER'} ${icons.external}</a>
+      <ul class="ed-list">${p.feats.map((f) => h`<li>${f}</li>`)}</ul>
+      <a class="ed-link" href="${url(p.key)}">Visit ${name(p.key)} ${icons.external}</a>
     </article>`)}
   </div>
 </section>
 
-<section id="ecosystem" class="wrap pad-lg">
-  <div class="light-band">
-    <div class="light-copy">
-      <p class="eyebrow">02 — Better together</p>
-      <h2 class="display-md">Build with EZ APP and EZ SITE. Protect with EZ DEFENDER.</h2>
+<section id="ecosystem" class="ed-invert">
+  <div class="wrap ed-invert-grid">
+    <div>
+      <span class="ed-num">(02) Better together</span>
+      <h2 class="ed-h2">Build with EZ APP and EZ SITE. <em>Protect with EZ DEFENDER.</em></h2>
       <p>One EZ DEV account signs you in everywhere. Whatever you build, EZ DEFENDER can check it from day one.</p>
-      <a class="btn btn-dark" href="${start}">${user ? 'Open your dashboard' : 'Create an EZ DEV account'}</a>
+      <a class="btn btn-dark btn-lg" href="${start}">${user ? 'Open your dashboard' : 'Create an EZ DEV account'} ${icons.arrow}</a>
     </div>
     <div class="org" role="img" aria-label="EZ DEV is the parent company of EZ APP, EZ SITE and EZ DEFENDER">
-      <div class="org-parent">${raw(lockupSvg('DEV', { height: 30 }).replace('role="img"', 'aria-hidden="true"'))}<span>PARENT COMPANY</span></div>
+      <div class="org-parent">${raw(lockupSvg('DEV', { height: 30, color: 'currentColor' }).replace('role="img"', 'aria-hidden="true"'))}<span>PARENT COMPANY</span></div>
       <div class="org-stem"></div>
       <div class="org-bar"></div>
       <div class="org-kids">
-        <div class="org-kid kid-blue"><strong>EZ APP</strong><span>Apps</span></div>
-        <div class="org-kid kid-orange"><strong>EZ SITE</strong><span>Websites</span></div>
-        <div class="org-kid kid-green"><strong>EZ DEFENDER</strong><span>Security</span></div>
+        <div class="org-kid"><strong>EZ APP</strong><span>Apps</span></div>
+        <div class="org-kid"><strong>EZ SITE</strong><span>Websites</span></div>
+        <div class="org-kid"><strong>EZ DEFENDER</strong><span>Security</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="company" class="wrap pad-lg why">
-  <div>
-    <p class="eyebrow">03 — Why EZ DEV</p>
-    <h2 class="display-md">Software, made easy for everyone.</h2>
-  </div>
-  <div class="why-grid">
-    <div class="why-item"><h3 class="h3">AI does the heavy lifting</h3><p class="muted">Start from an idea, not a blank screen. Our builders draft the first version for you.</p></div>
-    <div class="why-item"><h3 class="h3">Security built in</h3><p class="muted">EZ DEFENDER is part of the family, so protection isn't an afterthought.</p></div>
-    <div class="why-item"><h3 class="h3">One account, every tool</h3><p class="muted">Sign in once and move between EZ APP, EZ SITE and EZ DEFENDER.</p></div>
-    <div class="why-item"><h3 class="h3">For beginners and pros</h3><p class="muted">Simple by default, and you can always download the code.</p></div>
+<section id="company" class="wrap ed-section">
+  <header class="ed-head">
+    <span class="ed-num">(03) Why EZ DEV</span>
+    <h2 class="ed-h2">Software, made <em>easy</em> for everyone.</h2>
+    <p>From your first idea to a secure, published product, without the usual complexity.</p>
+  </header>
+  <div class="ed-cells">
+    <div class="ed-cell"><span class="ed-num">01</span><h3>AI does the heavy lifting</h3><p>Start from an idea, not a blank screen. Our builders draft the first version for you.</p></div>
+    <div class="ed-cell"><span class="ed-num">02</span><h3>Security built in</h3><p>EZ DEFENDER is part of the family, so protection isn't an afterthought.</p></div>
+    <div class="ed-cell"><span class="ed-num">03</span><h3>One account, every tool</h3><p>Sign in once and move between EZ APP, EZ SITE and EZ DEFENDER.</p></div>
+    <div class="ed-cell"><span class="ed-num">04</span><h3>For beginners and pros</h3><p>Simple by default, and you can always download the code.</p></div>
   </div>
 </section>
 
-<section class="wrap pad-lg">
-  <div class="cta-band card">
-    <div>
-      <h2 class="display-sm">Ready to build the <span class="accent-text">EZ</span> way?</h2>
-      <p class="muted">Start free. Pick a product, or use the whole family.</p>
-    </div>
+<section class="wrap ed-cta">
+  <h2 class="ed-h2">Ready to build<br>the <em>EZ</em> way?</h2>
+  <div class="ed-cta-row">
+    <p>Start free. Pick a product, or use the whole family.</p>
     <div class="cta-row">
-      <a class="btn btn-lg" href="${start}">Get started</a>
+      <a class="btn btn-lg" href="${start}">Get started ${icons.arrow}</a>
       <a class="btn btn-ghost btn-lg" href="/contact">Talk to us</a>
     </div>
   </div>

@@ -4,10 +4,11 @@
 // The mark is an "EZ" ligature: E and Z share one top and one bottom rail, so the two
 // letters read as a single connected piece — one family of products.
 
+// Black & white identity. (Classes ez-tile / ez-glyph let the site recolor the logo per theme.)
 export const BRAND = {
-  blue: '#2563EB',
-  blueBright: '#6EA8FF',
-  black: '#07090D',
+  ink: '#0A0A0A',
+  paper: '#FFFFFF',
+  black: '#0A0A0A',
   white: '#FFFFFF',
 };
 
@@ -36,7 +37,7 @@ const MARK_GLYPH = {
   w: 12,
   d: 'M0,0 H2.2 V10 H0 Z M0,0 H12 V2.2 H0 Z M0,7.8 H12 V10 H0 Z M0,3.9 H5.2 V6.1 H0 Z M9.2,2.2 H12 L8.6,7.8 H5.8 Z',
 };
-const markPath = (gx, gy, s, color) => `<path transform="translate(${gx.toFixed(2)} ${gy.toFixed(2)}) scale(${s})" d="${MARK_GLYPH.d}" fill="${color}"/>`;
+const markPath = (gx, gy, s, color) => `<path transform="translate(${gx.toFixed(2)} ${gy.toFixed(2)}) scale(${s})" d="${MARK_GLYPH.d}" fill="${color}" class="ez-glyph"/>`;
 
 const strokeAttrs = (color) =>
   `fill="none" stroke="${color}" stroke-width="${SW}" stroke-linejoin="miter" stroke-miterlimit="2.6" stroke-linecap="butt"`;
@@ -60,12 +61,12 @@ function wordPaths(text, x0, y0, color) {
 }
 
 /** Square app-icon mark: blue tile with the white EZ ligature. */
-export function markSvg({ size = 64, bg = BRAND.blue, fg = BRAND.white, radius = 0.24, title = 'EZ DEV', tile = true } = {}) {
+export function markSvg({ size = 64, bg = BRAND.ink, fg = BRAND.paper, radius = 0, title = 'EZ DEV', tile = true } = {}) {
   const box = 25;
   const s = 1.25; // glyph scale inside the tile
   const gx = (box - MARK_GLYPH.w * s) / 2;
   const gy = (box - 10 * s) / 2;
-  const tileEl = tile ? `<rect width="${box}" height="${box}" rx="${(box * radius).toFixed(2)}" fill="${bg}"/>` : '';
+  const tileEl = tile ? `<rect width="${box}" height="${box}" rx="${(box * radius).toFixed(2)}" fill="${bg}" class="ez-tile"/>` : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${box} ${box}" width="${size}" height="${size}" role="img" aria-label="${title}"><title>${title}</title>${tileEl}${markPath(gx, gy, s, fg)}</svg>`;
 }
 
@@ -73,7 +74,7 @@ export function markSvg({ size = 64, bg = BRAND.blue, fg = BRAND.white, radius =
  * Horizontal lockup: mark + product word ("DEV", "APP", "SITE", "DEFENDER").
  * The mark already says EZ, so the lockup reads "EZ DEV", "EZ APP", …
  */
-export function lockupSvg(word, { height = 40, color = BRAND.white, markBg = BRAND.blue, markFg = BRAND.white, title } = {}) {
+export function lockupSvg(word, { height = 40, color = BRAND.ink, markBg = BRAND.ink, markFg = BRAND.paper, title } = {}) {
   const box = 25;
   const s = 1.25;
   const gx = (box - MARK_GLYPH.w * s) / 2;
@@ -85,7 +86,7 @@ export function lockupSvg(word, { height = 40, color = BRAND.white, markBg = BRA
   const ty = (box - 10 * capScale) / 2;
   const label = title || `EZ ${word}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width.toFixed(2)} ${box}" height="${height}" width="${((width / box) * height).toFixed(1)}" role="img" aria-label="${label}"><title>${label}</title>`
-    + `<rect width="${box}" height="${box}" rx="6" fill="${markBg}"/>`
+    + `<rect width="${box}" height="${box}" fill="${markBg}" class="ez-tile"/>`
     + markPath(gx, gy, s, markFg)
     + `<g transform="translate(${box + gap} ${ty.toFixed(2)}) scale(${capScale})">${wordPaths(word, 0, 0, color)}</g>`
     + '</svg>';

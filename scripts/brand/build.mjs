@@ -29,13 +29,13 @@ const strip = (svg) => svg.replace(/ width="[^"]*"/, '').replace(/ height="[^"]*
 // ---------- SVGs ----------
 console.log('SVG');
 write(join(KIT, 'svg/ez-mark.svg'), strip(markSvg()));
-write(join(KIT, 'svg/ez-mark-white-tile.svg'), strip(markSvg({ bg: BRAND.white, fg: BRAND.blue })));
+write(join(KIT, 'svg/ez-mark-white-tile.svg'), strip(markSvg({ bg: BRAND.white, fg: BRAND.black })));
 write(join(KIT, 'svg/ez-mark-black-tile.svg'), strip(markSvg({ bg: BRAND.black, fg: BRAND.white })));
-write(join(KIT, 'svg/ez-glyph-blue.svg'), strip(markSvg({ tile: false, fg: BRAND.blue })));
+write(join(KIT, 'svg/ez-glyph-black.svg'), strip(markSvg({ tile: false, fg: BRAND.black })));
+write(join(KIT, 'svg/ez-glyph-white.svg'), strip(markSvg({ tile: false, fg: BRAND.white })));
 for (const [key, word] of Object.entries(PRODUCT_WORD)) {
-  write(join(KIT, `svg/${key}-logo-on-dark.svg`), lockupSvg(word, { color: BRAND.white }));
+  write(join(KIT, `svg/${key}-logo-on-dark.svg`), lockupSvg(word, { color: BRAND.white, markBg: BRAND.white, markFg: BRAND.black }));
   write(join(KIT, `svg/${key}-logo-on-light.svg`), lockupSvg(word, { color: BRAND.black }));
-  write(join(KIT, `svg/${key}-logo-on-blue.svg`), lockupSvg(word, { color: BRAND.white, markBg: BRAND.white, markFg: BRAND.blue }));
 }
 write(join(ASSETS, 'favicon.svg'), strip(markSvg()));
 
@@ -46,7 +46,7 @@ const page = await browser.newPage();
 
 async function render(html, { width, height, scale = 1, out, transparent = false }) {
   await page.setViewportSize({ width, height });
-  await page.setContent(`<!doctype html><html><head><style>html,body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:${transparent ? 'transparent' : '#07090D'}}
+  await page.setContent(`<!doctype html><html><head><style>html,body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:${transparent ? 'transparent' : '#0A0A0A'}}
     body{display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}</style></head><body>${html}</body></html>`);
   const el = await page.$('body');
   await el.screenshot({ path: out, omitBackground: transparent, scale: scale === 1 ? 'css' : 'device' });
@@ -57,7 +57,7 @@ for (const size of [1024, 512, 192, 180, 32]) {
   await render(markSvg({ size }), { width: size, height: size, out: join(KIT, `png/ez-mark-${size}.png`), transparent: true });
 }
 for (const [key, word] of Object.entries(PRODUCT_WORD)) {
-  await render(lockupSvg(word, { height: 160, color: BRAND.white }), { width: 1400, height: 200, out: join(KIT, `png/${key}-logo-on-dark.png`) });
+  await render(lockupSvg(word, { height: 160, color: BRAND.white, markBg: BRAND.white, markFg: BRAND.black }), { width: 1400, height: 200, out: join(KIT, `png/${key}-logo-on-dark.png`) });
   await render(`<div style="background:#fff;width:100%;height:100%;display:flex;align-items:center;justify-content:center">${lockupSvg(word, { height: 160, color: BRAND.black })}</div>`, { width: 1400, height: 200, out: join(KIT, `png/${key}-logo-on-light.png`) });
 }
 
@@ -67,7 +67,7 @@ await render(markSvg({ size: 512 }), { width: 512, height: 512, out: join(ASSETS
 await render(markSvg({ size: 192 }), { width: 192, height: 192, out: join(ASSETS, 'icon-192.png'), transparent: true });
 
 // Email header logo (light background, 2x for retina: shown at 150×30)
-await render(`<div style="background:#f3f6fb;width:100%;height:100%;display:flex;align-items:center;justify-content:flex-start">${lockupSvg('DEV', { height: 60, color: BRAND.black })}</div>`,
+await render(`<div style="background:#ffffff;width:100%;height:100%;display:flex;align-items:center;justify-content:flex-start">${lockupSvg('DEV', { height: 60, color: BRAND.black })}</div>`,
   { width: 300, height: 60, out: join(ASSETS, 'email-logo.png') });
 
 // Social share images (1200×630), one per product
@@ -78,11 +78,11 @@ const TAGLINES = {
   ezdefender: 'Find the weak spots before attackers do.',
 };
 for (const [key, word] of Object.entries(PRODUCT_WORD)) {
-  const html = `<div style="width:1200px;height:630px;box-sizing:border-box;padding:84px 96px;background:#07090D;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden">
-    <div style="position:absolute;right:-60px;bottom:-110px;opacity:.22">${markSvg({ size: 560, tile: false, fg: BRAND.blue })}</div>
-    ${lockupSvg(word, { height: 84, color: BRAND.white })}
+  const html = `<div style="width:1200px;height:630px;box-sizing:border-box;padding:84px 96px;background:#0A0A0A;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden">
+    <div style="position:absolute;right:-40px;bottom:-90px;opacity:.12">${markSvg({ size: 560, tile: false, fg: BRAND.white })}</div>
+    ${lockupSvg(word, { height: 84, color: BRAND.white, markBg: BRAND.white, markFg: BRAND.black })}
     <div style="position:relative;color:#fff;font:700 68px/1.05 system-ui,sans-serif;letter-spacing:-.02em;max-width:900px">${TAGLINES[key]}</div>
-    <div style="position:relative;color:#6EA8FF;font:500 28px system-ui,sans-serif">EZ APP · EZ SITE · EZ DEFENDER</div>
+    <div style="position:relative;color:#A8A8A8;font:500 28px system-ui,sans-serif">EZ APP · EZ SITE · EZ DEFENDER</div>
   </div>`;
   await render(html, { width: 1200, height: 630, out: join(ASSETS, `og-${key}.png`) });
   await render(html, { width: 1200, height: 630, out: join(KIT, `social/og-${key}.png`) });

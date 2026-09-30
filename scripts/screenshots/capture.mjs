@@ -103,7 +103,7 @@ const guestMobile = await browser.newContext({ viewport: { width: 390, height: 8
 for (const c of [web, mobile, guestWeb, guestMobile]) await blockFonts(c);
 
 const shots = [];
-async function shot(ctx, kind, name, url, { full = false, before, wait = 300 } = {}) {
+async function shot(ctx, kind, name, url, { full = false, before, wait = 1100 } = {}) {
   const page = await ctx.newPage();
   await page.goto(url, { waitUntil: 'load' });
   if (before) await before(page);

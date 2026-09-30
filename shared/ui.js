@@ -2,10 +2,10 @@
 
 import { h, raw } from './http.js';
 import { PRODUCTS, productUrl } from './config.js';
-import { lockupSvg, PRODUCT_WORD } from './logo.js';
+import { lockupSvg, wordmarkSvg, PRODUCT_WORD } from './logo.js';
 import { avatarUrl } from './avatar.js';
 
-const FONTS = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap';
+const FONTS = 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap';
 
 export const icons = {
   app: raw('<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/><path d="M9.5 8.5 8 10l1.5 1.5"/><path d="M14.5 8.5 16 10l-1.5 1.5"/></svg>'),
@@ -63,8 +63,8 @@ export function page({ env, product, title, user, body, nav = [], scripts = [], 
 <meta name="description" content="${description || `${p.name}: ${p.tagline}.`}">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<meta name="theme-color" content="#05070B" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#F6F8FC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <script src="/assets/theme.js"></script>
 <meta property="og:site_name" content="${p.name}">
 <meta property="og:title" content="${fullTitle}">
@@ -80,7 +80,7 @@ export function page({ env, product, title, user, body, nav = [], scripts = [], 
 <body class="accent-${p.accent} ${bodyClass}">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
-  <div class="wrap"><div class="header-row">
+  <div class="wrap header-row">
     ${brand(product, '/')}
     <nav class="primary" aria-label="Primary">
       ${nav.map((n) => h`<a class="nav-link" href="${n.href}">${n.label}</a>`)}
@@ -92,7 +92,7 @@ export function page({ env, product, title, user, body, nav = [], scripts = [], 
       </button>
       ${account}
     </div>
-  </div></div>
+  </div>
 </header>
 <main id="main">
 ${body}
@@ -122,7 +122,8 @@ ${body}
       <a href="${ezdev}/security">Security</a>
     </div>
   </div>
-  <div class="wrap copyright">© ${new Date().getUTCFullYear()} EZ DEV. All rights reserved.</div>
+  <div class="wrap footer-mark" aria-hidden="true">${raw(wordmarkSvg('EZ DEV', { height: 200, color: 'currentColor' }).replace(/ width="[^"]*"/, '').replace(/ height="[^"]*"/, '').replace(/<title>.*?<\/title>/, ''))}</div>
+  <div class="wrap copyright"><span>© ${new Date().getUTCFullYear()} EZ DEV. All rights reserved.</span><span>EZ APP · EZ SITE · EZ DEFENDER</span></div>
 </footer>
 ${scripts.map((s) => h`<script src="${s}" defer></script>`)}
 </body>

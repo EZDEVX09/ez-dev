@@ -17,24 +17,24 @@ export const HABIT_APP = [
 </main>
 <script src="app.js"></script>
 </body></html>` },
-  { path: 'styles.css', content: `*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f1ea;color:#1d1f24}
+  { path: 'styles.css', content: `*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#ffffff;color:#0a0a0a}
 .app{max-width:760px;margin:0 auto;padding:40px 24px}
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
-.eyebrow{margin:0;color:#7a756b;font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+.eyebrow{margin:0;color:#555555;font-size:14px;letter-spacing:.04em;text-transform:uppercase}
 h1{margin:4px 0 0;font-size:44px;letter-spacing:-.02em}h2{font-size:18px;margin:0 0 14px}
 .ring{position:relative;width:72px;height:72px}.ring svg{width:72px;height:72px;transform:rotate(-90deg)}
-.ring circle{fill:none;stroke:#e3ddd0;stroke-width:5}.ring .fill{stroke:#2f6df6;stroke-linecap:round}
+.ring circle{fill:none;stroke:#e5e5e5;stroke-width:5}.ring .fill{stroke:#0a0a0a;stroke-linecap:round}
 .ring span{position:absolute;inset:0;display:grid;place-items:center;font-weight:700}
 .habits{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:12px}
-.habit{display:flex;align-items:center;gap:16px;background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 1px 0 #e3ddd0}
-.check{width:32px;height:32px;border-radius:50%;border:2px solid #c9c2b3;background:none;cursor:pointer;display:grid;place-items:center;flex-shrink:0}
-.check.on{background:#2f6df6;border-color:#2f6df6;color:#fff}
-.habit .name{flex:1;font-weight:600;font-size:17px}.habit .streak{font-size:14px;color:#7a756b}
-.habit .streak b{color:#e0572b}
-.add{display:flex;gap:10px;margin-bottom:36px}.add input{flex:1;font:inherit;padding:14px 16px;border-radius:12px;border:1px solid #d8d1c2;background:#fff}
-.add button{font:inherit;font-weight:600;padding:0 22px;border-radius:12px;border:0;background:#1d1f24;color:#fff}
+.habit{display:flex;align-items:center;gap:16px;background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 1px 0 #e5e5e5}
+.check{width:32px;height:32px;border-radius:50%;border:2px solid #999999;background:none;cursor:pointer;display:grid;place-items:center;flex-shrink:0}
+.check.on{background:#0a0a0a;border-color:#0a0a0a;color:#fff}
+.habit .name{flex:1;font-weight:600;font-size:17px}.habit .streak{font-size:14px;color:#555555}
+.habit .streak b{color:#0a0a0a}
+.add{display:flex;gap:10px;margin-bottom:36px}.add input{flex:1;font:inherit;padding:14px 16px;border-radius:12px;border:1px solid #cccccc;background:#fff}
+.add button{font:inherit;font-weight:600;padding:0 22px;border-radius:12px;border:0;background:#0a0a0a;color:#fff}
 .week{background:#fff;border-radius:16px;padding:20px}.grid{display:grid;grid-template-columns:repeat(14,1fr);gap:6px}
-.grid i{aspect-ratio:1;border-radius:5px;background:#ece7dc}.grid i.l1{background:#bcd0fb}.grid i.l2{background:#7ea3f8}.grid i.l3{background:#2f6df6}
+.grid i{aspect-ratio:1;border-radius:5px;background:#eeeeee}.grid i.l1{background:#d4d4d4}.grid i.l2{background:#8a8a8a}.grid i.l3{background:#0a0a0a}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}` },
   { path: 'app.js', content: `const habits=[{n:'Morning run',s:12,on:true},{n:'Read 20 pages',s:31,on:true},{n:'Drink 8 glasses of water',s:5,on:true},{n:'Meditate',s:3,on:false},{n:'No phone after 10pm',s:0,on:false}];
 const list=document.getElementById('habits');
@@ -45,17 +45,17 @@ render();const g=document.getElementById('grid');for(let i=0;i<28;i++){const c=d
 document.getElementById('add').onsubmit=e=>{e.preventDefault();const v=document.getElementById('new');if(v.value.trim()){habits.push({n:v.value.trim(),s:0,on:false});v.value='';render()}};` },
 ];
 
-const BAKERY_CSS = `*{box-sizing:border-box}body{margin:0;font-family:Georgia,'Times New Roman',serif;background:#fbf6ee;color:#2a211b}
-a{color:inherit}.nav{display:flex;justify-content:space-between;align-items:center;padding:22px 6vw;border-bottom:1px solid #eadfcd}
-.logo{font-size:24px;font-weight:700;letter-spacing:-.01em}.logo span{color:#b5562a}
-.nav ul{display:flex;gap:28px;list-style:none;margin:0;padding:0;font-family:system-ui,sans-serif;font-size:15px}.nav a{text-decoration:none}.nav a[aria-current]{border-bottom:2px solid #b5562a}
+const BAKERY_CSS = `*{box-sizing:border-box}body{margin:0;font-family:Georgia,'Times New Roman',serif;background:#ffffff;color:#0a0a0a}
+a{color:inherit}.nav{display:flex;justify-content:space-between;align-items:center;padding:22px 6vw;border-bottom:1px solid #dddddd}
+.logo{font-size:24px;font-weight:700;letter-spacing:-.01em}.logo span{color:#0a0a0a}
+.nav ul{display:flex;gap:28px;list-style:none;margin:0;padding:0;font-family:system-ui,sans-serif;font-size:15px}.nav a{text-decoration:none}.nav a[aria-current]{border-bottom:2px solid #0a0a0a}
 .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:5vw;align-items:center;padding:8vh 6vw}
-.hero h1{font-size:clamp(40px,6vw,76px);line-height:1;margin:0 0 20px;letter-spacing:-.02em}.hero p{font-family:system-ui,sans-serif;font-size:19px;line-height:1.6;color:#5c4d40;max-width:520px}
-.btn{display:inline-block;margin-top:14px;padding:14px 26px;border-radius:999px;background:#2a211b;color:#fbf6ee;text-decoration:none;font-family:system-ui,sans-serif;font-weight:600}
-.loaf{aspect-ratio:1;border-radius:48% 52% 45% 55%;background:#d99a5b;position:relative;box-shadow:inset -30px -30px 0 #c07c3c}
-.loaf::before,.loaf::after{content:'';position:absolute;height:14px;border-radius:8px;background:#f1d2a6;left:22%;right:22%}.loaf::before{top:38%;transform:rotate(-14deg)}.loaf::after{top:56%;transform:rotate(-14deg)}
+.hero h1{font-size:clamp(40px,6vw,76px);line-height:1;margin:0 0 20px;letter-spacing:-.02em}.hero p{font-family:system-ui,sans-serif;font-size:19px;line-height:1.6;color:#555555;max-width:520px}
+.btn{display:inline-block;margin-top:14px;padding:14px 26px;border-radius:999px;background:#0a0a0a;color:#ffffff;text-decoration:none;font-family:system-ui,sans-serif;font-weight:600}
+.loaf{aspect-ratio:1;border-radius:48% 52% 45% 55%;background:#1a1a1a;position:relative;box-shadow:inset -30px -30px 0 #000000}
+.loaf::before,.loaf::after{content:'';position:absolute;height:14px;border-radius:8px;background:#ffffff;left:22%;right:22%}.loaf::before{top:38%;transform:rotate(-14deg)}.loaf::after{top:56%;transform:rotate(-14deg)}
 .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:0 6vw 10vh;font-family:system-ui,sans-serif}
-.strip div{background:#fff;border-radius:18px;padding:26px;border:1px solid #eadfcd}.strip h3{font-family:Georgia,serif;font-size:22px;margin:0 0 8px}.strip p{margin:0;color:#6b5b4d;line-height:1.5}
+.strip div{background:#fff;border-radius:18px;padding:26px;border:1px solid #dddddd}.strip h3{font-family:Georgia,serif;font-size:22px;margin:0 0 8px}.strip p{margin:0;color:#555555;line-height:1.5}
 @media(max-width:720px){.hero{grid-template-columns:1fr}.loaf{max-width:260px}.strip{grid-template-columns:1fr}.nav ul{gap:14px;font-size:14px}}`;
 
 const bakeryPage = (current, main) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -86,7 +86,7 @@ const simple = (title) => [
 export function fakeGeneration(prompt, isSite) {
   const p = prompt.toLowerCase();
   if (p.includes('habit')) return { summary: 'Built “Streaks”, a habit tracker with daily check-offs, streak counts, a progress ring and a 4-week heatmap. Your habits are kept on this device.', files: HABIT_APP };
-  if (p.includes('stand out')) return { summary: 'Made the streak counts bold and orange so they stand out against the list.', files: HABIT_APP };
+  if (p.includes('stand out')) return { summary: 'Made the streak counts bold so they stand out against the list.', files: HABIT_APP };
   if (p.includes('bakery')) return { summary: 'Built a 4-page site for Crumb & Crust: home, menu, our story and visit pages, with a shared header and a warm, hand-made look.', files: BAKERY_SITE };
   if (isSite) return { summary: 'Built your site.', files: simple(prompt.slice(0, 40)) };
   return { summary: 'Built your app.', files: simple(prompt.slice(0, 40)) };
