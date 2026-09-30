@@ -1,0 +1,84 @@
+name: Test & deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run end-to-end tests
+        run: npm test
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      EZ_DOMAIN: ${{ vars.EZ_DOMAIN }}
+      CF_WORKERS_SUBDOMAIN: ${{ vars.CF_WORKERS_SUBDOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check Cloudflare secrets
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in Settings → Secrets and variables → Actions. See README."
+            exit 1
+          fi
+
+      - name: Install Wrangler
+        run: npm install --no-save wrangler@4
+
+      - name: Generate Worker configs (finds or creates the D1 database)
+        id: config
+        run: node scripts/configure.mjs
+
+      - name: Apply database migrations
+        run: npx wrangler d1 migrations apply ez-dev-db --remote -c apps/ezdev/wrangler.json
+
+      - name: Deploy EZ DEV, EZ APP, EZ SITE, EZ DEFENDER
+        run: |
+          for app in ezdev ezapp ezsite ezdefender; do
+            echo "::group::Deploy $app"
+            npx wrangler deploy -c apps/$app/wrangler.json
+            echo "::endgroup::"
+          done
+
+      - name: Set Claude API key on the builders
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::warning::ANTHROPIC_API_KEY secret not set: EZ APP and EZ SITE can't generate until you add it."
+            exit 0
+          fi
+          for app in ezapp ezsite; do
+            printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler secret put ANTHROPIC_API_KEY -c apps/$app/wrangler.json
+          done
+
+      - name: Smoke test
+        run: |
+          sleep 5
+          code=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.config.outputs.ezdev_url }}/healthz")
+          echo "EZ DEV /healthz → $code"
+          if [ "$code" != "200" ]; then
+            echo "::warning::EZ DEV didn't answer yet. New custom domains can take a few minutes to get their certificate."
+          fi

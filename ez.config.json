@@ -1,0 +1,9 @@
+{
+  "d1DatabaseName": "ez-dev-db",
+  "d1DatabaseId": "d782aca5-8351-4062-a46f-23f1f66018c8",
+  "domain": "",
+  "workersSubdomain": "",
+  "supportEmail": "ezdevsupport@proton.me",
+  "claudeModel": "claude-sonnet-5-5",
+  "compatibilityDate": "2025-09-01"
+}

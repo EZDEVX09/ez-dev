@@ -1,0 +1,15 @@
+{
+  "name": "ez-dev",
+  "private": true,
+  "type": "module",
+  "description": "EZ DEV — parent platform for EZ APP (AI app builder), EZ SITE (AI website builder) and EZ DEFENDER (security toolbox), on Cloudflare Workers.",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "test": "node --test --no-warnings test/*.test.mjs",
+    "dev": "node --no-warnings scripts/dev-server.mjs",
+    "configure": "node scripts/configure.mjs",
+    "configure:local": "node scripts/configure.mjs --local",
+    "deploy": "node scripts/configure.mjs && for a in ezdev ezapp ezsite ezdefender; do npx wrangler@4 deploy -c apps/$a/wrangler.json || exit 1; done",
+    "db:migrate": "npx wrangler@4 d1 migrations apply ez-dev-db --remote -c apps/ezdev/wrangler.json"
+  }
+}
