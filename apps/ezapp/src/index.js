@@ -3,6 +3,7 @@
 import { h, html, serve } from '../../../shared/http.js';
 import { getUser } from '../../../shared/auth.js';
 import { page, errorPage, icons } from '../../../shared/ui.js';
+import { showcase } from '../../../shared/visuals.js';
 import { mountBuilder } from '../../../shared/builder.js';
 import { subsidiaryRouter } from '../../../shared/subsidiary.js';
 
@@ -36,18 +37,18 @@ router.get('/', async (c) => {
   const start = user ? '/dashboard' : '/auth/start?next=/dashboard';
   const body = h`
 <section class="hero wrap">
-  <p class="pill"><span class="dot"></span>EZ APP · an EZ DEV company</p>
-  <h1 class="display-xl">Describe it.<br><span class="accent-text">Get a working app.</span></h1>
-  <p class="lead">Tell EZ APP what you need in plain words. It writes the app, shows you a live preview, and keeps improving it every time you ask for a change.</p>
-  <div class="cta-row">
+  <p class="pill reveal"><span class="dot"></span>EZ APP · an EZ DEV company</p>
+  <h1 class="display-xl reveal reveal-2">Describe it. <span class="accent-text">Get a working app.</span></h1>
+  <p class="lead reveal reveal-3">Tell EZ APP what you need in plain words. It writes the app, shows you a live preview, and keeps improving it every time you ask for a change.</p>
+  <div class="cta-row reveal reveal-3">
     <a class="btn btn-lg" href="${start}">Start building ${icons.arrow}</a>
     <a class="btn btn-ghost btn-lg" href="#how">How it works</a>
   </div>
+  ${showcase('ezapp')}
 </section>
 
 <section id="how" class="wrap pad-lg">
-  <p class="eyebrow">How it works</p>
-  <h2 class="display-md">From idea to app in three steps.</h2>
+  <div class="section-head"><p class="eyebrow">How it works</p><h2 class="display-md">From idea to app in three steps.</h2></div>
   <ol class="steps">
     <li class="card"><span class="step-n">1</span><h3 class="h3">Describe</h3><p>Write what the app should do, who it's for and how it should feel.</p></li>
     <li class="card"><span class="step-n">2</span><h3 class="h3">Preview</h3><p>Watch it appear in a live preview on desktop and mobile sizes, and read the code if you want to.</p></li>
@@ -56,8 +57,7 @@ router.get('/', async (c) => {
 </section>
 
 <section id="examples" class="wrap pad-lg">
-  <p class="eyebrow">What people build</p>
-  <h2 class="display-md">Small tools that do one job well.</h2>
+  <div class="section-head"><p class="eyebrow">What people build</p><h2 class="display-md">Small tools that do one job well.</h2></div>
   <ul class="example-grid">
     <li class="card"><h3 class="h3">Trackers</h3><p>Habits, workouts, budgets, reading lists, inventory.</p></li>
     <li class="card"><h3 class="h3">Calculators</h3><p>Quotes, pricing, loan and savings, unit conversions.</p></li>

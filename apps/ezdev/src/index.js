@@ -13,6 +13,7 @@ import {
 } from '../../../shared/billing.js';
 import { PLANS, planFor, getUsage, monthPeriod, dayPeriod, productUrl } from '../../../shared/config.js';
 import { page, errorPage, icons, productIcon, flash } from '../../../shared/ui.js';
+import { showcase } from '../../../shared/visuals.js';
 import { lockupSvg } from '../../../shared/logo.js';
 import { mountAvatarRead, mountAvatarWrite, avatarUrl } from '../../../shared/avatar.js';
 
@@ -43,13 +44,14 @@ router.get('/', async (c) => {
   const body = h`
 ${signedOut ? h`<div class="wrap">${flash('You have been signed out of every EZ product.', 'ok')}</div>` : ''}
 <section class="hero wrap">
-  <p class="pill"><span class="dot"></span>The parent company of EZ APP · EZ SITE · EZ DEFENDER</p>
-  <h1 class="display-xl">Build it. Launch it.<br><span class="accent-text">Lock it down.</span></h1>
-  <p class="lead">EZ DEV makes building software easy. One family of AI-powered tools to create your app, publish your website, and keep both secure. One account for all of it.</p>
-  <div class="cta-row">
+  <p class="pill reveal"><span class="dot"></span>The parent company of EZ APP · EZ SITE · EZ DEFENDER</p>
+  <h1 class="display-xl reveal reveal-2">Build it. Launch it.<br><span class="accent-text">Lock it down.</span></h1>
+  <p class="lead reveal reveal-3">EZ DEV makes building software easy. One family of AI-powered tools to create your app, publish your website, and keep both secure. One account for all of it.</p>
+  <div class="cta-row reveal reveal-3">
     <a class="btn btn-lg" href="#products">Explore the products ${icons.arrow}</a>
     <a class="btn btn-ghost btn-lg" href="${start}">${user ? 'Go to dashboard' : 'Create your account'}</a>
   </div>
+  ${showcase('ezdev')}
 </section>
 
 <section id="products" class="wrap pad-lg">

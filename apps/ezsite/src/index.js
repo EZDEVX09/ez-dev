@@ -3,6 +3,7 @@
 import { h, html, serve } from '../../../shared/http.js';
 import { getUser } from '../../../shared/auth.js';
 import { page, errorPage, icons } from '../../../shared/ui.js';
+import { showcase } from '../../../shared/visuals.js';
 import { mountBuilder } from '../../../shared/builder.js';
 import { subsidiaryRouter } from '../../../shared/subsidiary.js';
 
@@ -41,18 +42,18 @@ router.get('/', async (c) => {
   const start = user ? '/dashboard' : '/auth/start?next=/dashboard';
   const body = h`
 <section class="hero wrap">
-  <p class="pill"><span class="dot"></span>EZ SITE · an EZ DEV company</p>
-  <h1 class="display-xl">Your website,<br><span class="accent-text">written and designed for you.</span></h1>
-  <p class="lead">Tell EZ SITE about your business. It plans the pages, writes the copy, designs every screen and puts it online with one click.</p>
-  <div class="cta-row">
+  <p class="pill reveal"><span class="dot"></span>EZ SITE · an EZ DEV company</p>
+  <h1 class="display-xl reveal reveal-2">Your website, <span class="accent-text">written and designed for you.</span></h1>
+  <p class="lead reveal reveal-3">Tell EZ SITE about your business. It plans the pages, writes the copy, designs every screen and puts it online with one click.</p>
+  <div class="cta-row reveal reveal-3">
     <a class="btn btn-lg" href="${start}">Build my website ${icons.arrow}</a>
     <a class="btn btn-ghost btn-lg" href="#how">How it works</a>
   </div>
+  ${showcase('ezsite')}
 </section>
 
 <section id="how" class="wrap pad-lg">
-  <p class="eyebrow">How it works</p>
-  <h2 class="display-md">Launch in an afternoon, not a month.</h2>
+  <div class="section-head"><p class="eyebrow">How it works</p><h2 class="display-md">Launch in an afternoon, not a month.</h2></div>
   <ol class="steps">
     <li class="card"><span class="step-n">1</span><h3 class="h3">Tell us about you</h3><p>What you do, who you serve and the pages you need.</p></li>
     <li class="card"><span class="step-n">2</span><h3 class="h3">Review the draft</h3><p>A complete multi-page site with real copy, ready to preview on any screen size.</p></li>
@@ -61,8 +62,7 @@ router.get('/', async (c) => {
 </section>
 
 <section id="features" class="wrap pad-lg">
-  <p class="eyebrow">Features</p>
-  <h2 class="display-md">Everything a small business site needs.</h2>
+  <div class="section-head"><p class="eyebrow">Features</p><h2 class="display-md">Everything a small business site needs.</h2></div>
   <ul class="example-grid">
     <li class="card"><h3 class="h3">Multi-page sites</h3><p>Home, about, services, contact and more, with shared navigation.</p></li>
     <li class="card"><h3 class="h3">Copy that fits</h3><p>Written from your details, with clear placeholders where facts are missing.</p></li>

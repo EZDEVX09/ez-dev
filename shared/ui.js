@@ -26,7 +26,7 @@ export const productIcon = { ezapp: icons.app, ezsite: icons.site, ezdefender: i
 
 function brand(product, href) {
   const p = PRODUCTS[product];
-  return h`<a class="brand" href="${href}" aria-label="${p.name} home">${raw(lockupSvg(PRODUCT_WORD[product], { height: 34 }).replace('role="img"', 'aria-hidden="true" focusable="false"').replace(/<title>.*?<\/title>/, ''))}</a>`;
+  return h`<a class="brand" href="${href}" aria-label="${p.name} home">${raw(lockupSvg(PRODUCT_WORD[product], { height: 34, color: 'currentColor' }).replace('role="img"', 'aria-hidden="true" focusable="false"').replace(/<title>.*?<\/title>/, ''))}</a>`;
 }
 
 /**
@@ -63,7 +63,9 @@ export function page({ env, product, title, user, body, nav = [], scripts = [], 
 <meta name="description" content="${description || `${p.name}: ${p.tagline}.`}">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<meta name="theme-color" content="#07090D">
+<meta name="theme-color" content="#05070B" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F8FC" media="(prefers-color-scheme: light)">
+<script src="/assets/theme.js"></script>
 <meta property="og:site_name" content="${p.name}">
 <meta property="og:title" content="${fullTitle}">
 <meta property="og:description" content="${description || `${p.name}: ${p.tagline}.`}">
@@ -78,13 +80,19 @@ export function page({ env, product, title, user, body, nav = [], scripts = [], 
 <body class="accent-${p.accent} ${bodyClass}">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
-  <div class="wrap header-row">
+  <div class="wrap"><div class="header-row">
     ${brand(product, '/')}
     <nav class="primary" aria-label="Primary">
       ${nav.map((n) => h`<a class="nav-link" href="${n.href}">${n.label}</a>`)}
     </nav>
-    <div class="account">${account}</div>
-  </div>
+    <div class="account">
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch between light and dark theme" title="Light / dark">
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      ${account}
+    </div>
+  </div></div>
 </header>
 <main id="main">
 ${body}

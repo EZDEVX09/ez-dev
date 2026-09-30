@@ -5,6 +5,7 @@ import { getUser, requireUser } from '../../../shared/auth.js';
 import { planFor, getUsage, addUsage, dayPeriod, productUrl } from '../../../shared/config.js';
 import { sendTemplate } from '../../../shared/email.js';
 import { page, errorPage, icons, flash } from '../../../shared/ui.js';
+import { showcase } from '../../../shared/visuals.js';
 import { subsidiaryRouter } from '../../../shared/subsidiary.js';
 import { scan, ScanError, GUIDES, normalizeTarget, normalizeDomain, checkVerification } from './scanner.js';
 
@@ -34,26 +35,25 @@ router.get('/', async (c) => {
   ];
   const body = h`
 <section class="hero wrap">
-  <p class="pill"><span class="dot"></span>EZ DEFENDER · an EZ DEV company</p>
-  <h1 class="display-xl">Find the weak spots<br><span class="accent-text">before attackers do.</span></h1>
-  <p class="lead">EZ DEFENDER scans your website or web app, grades its security, and explains every fix in plain English. Then it keeps watch and alerts you when something changes.</p>
-  <div class="cta-row">
+  <p class="pill reveal"><span class="dot"></span>EZ DEFENDER · an EZ DEV company</p>
+  <h1 class="display-xl reveal reveal-2">Find the weak spots <span class="accent-text">before attackers do.</span></h1>
+  <p class="lead reveal reveal-3">EZ DEFENDER scans your website or web app, grades its security, and explains every fix in plain English. Then it keeps watch and alerts you when something changes.</p>
+  <div class="cta-row reveal reveal-3">
     <a class="btn btn-lg" href="${start}">Scan my site ${icons.arrow}</a>
     <a class="btn btn-ghost btn-lg" href="#checks">What we check</a>
   </div>
+  ${showcase('ezdefender')}
 </section>
 
 <section id="checks" class="wrap pad-lg">
-  <p class="eyebrow">What we check</p>
-  <h2 class="display-md">Over 25 checks across six areas.</h2>
+  <div class="section-head"><p class="eyebrow">What we check</p><h2 class="display-md">Over 25 checks across six areas.</h2></div>
   <ul class="example-grid three">
     ${groups.map(([t, d]) => h`<li class="card"><h3 class="h3">${t}</h3><p>${d}</p></li>`)}
   </ul>
 </section>
 
 <section id="how" class="wrap pad-lg">
-  <p class="eyebrow">How it works</p>
-  <h2 class="display-md">Scan. Fix. Stay protected.</h2>
+  <div class="section-head"><p class="eyebrow">How it works</p><h2 class="display-md">Scan. Fix. Stay protected.</h2></div>
   <ol class="steps">
     <li class="card"><span class="step-n">1</span><h3 class="h3">Scan any URL</h3><p>Get a grade from A+ to F in seconds, with every finding explained.</p></li>
     <li class="card"><span class="step-n">2</span><h3 class="h3">Verify you own it</h3><p>Add a DNS record or a small file to unlock deep checks for leaked files and secrets.</p></li>

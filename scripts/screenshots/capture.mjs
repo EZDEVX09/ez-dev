@@ -24,6 +24,8 @@ if (!playwright) { console.error('Install Playwright first: npm i -g playwright 
 const OUT = process.argv[2] || join(process.cwd(), 'screenshots');
 mkdirSync(join(OUT, 'web'), { recursive: true });
 mkdirSync(join(OUT, 'mobile'), { recursive: true });
+mkdirSync(join(OUT, 'web-light'), { recursive: true });
+mkdirSync(join(OUT, 'mobile-light'), { recursive: true });
 
 const DEV = `http://localhost:${PORTS.ezdev}`;
 const APP = `http://localhost:${PORTS.ezapp}`;
@@ -94,10 +96,10 @@ for (const [key, port] of Object.entries(PORTS)) {
 
 const browser = await playwright.chromium.launch();
 const blockFonts = (ctx) => ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
-const web = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
-const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
-const guestWeb = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
-const guestMobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+const web = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'dark' });
+const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, colorScheme: 'dark', isMobile: true, hasTouch: true });
+const guestWeb = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'dark' });
+const guestMobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, colorScheme: 'dark', isMobile: true, hasTouch: true });
 for (const c of [web, mobile, guestWeb, guestMobile]) await blockFonts(c);
 
 const shots = [];
@@ -230,6 +232,34 @@ await shot(mobile, 'mobile', '13-ezdefender-dashboard', `${DEF}/dashboard`);
 await shot(mobile, 'mobile', '14-ezdefender-report', `${DEF}/scans/${scanIds['blog.example']}`);
 await shot(mobile, 'mobile', '15-ezdefender-report-full', `${DEF}/scans/${scanIds['shop.example']}`, { full: true });
 await shot(mobile, 'mobile', '16-account-billing', `${DEV}/account`);
+
+console.log('Light theme:');
+const lightWeb = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'light' });
+const lightMobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, colorScheme: 'light' });
+const lightGuest = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'light' });
+for (const c of [lightWeb, lightMobile, lightGuest]) await blockFonts(c);
+for (const ctx of [lightWeb, lightMobile]) {
+  const p = await ctx.newPage();
+  await p.goto(`${DEV}/login`);
+  await p.fill('#email', 'jordan@example.com');
+  await p.fill('#password', 'demo password 12345');
+  await p.click('form.form button[type=submit]');
+  await p.waitForURL(/dashboard/);
+  for (const base of [APP, SITE, DEF]) await p.goto(`${base}/dashboard`);
+  await p.close();
+}
+await shot(lightGuest, 'web-light', '01-ezdev-home', `${DEV}/`);
+await shot(lightGuest, 'web-light', '02-ezdev-home-full', `${DEV}/`, { full: true });
+await shot(lightGuest, 'web-light', '03-pricing', `${DEV}/pricing`);
+await shot(lightWeb, 'web-light', '05-ezdev-dashboard', `${DEV}/dashboard`);
+await shot(lightWeb, 'web-light', '08-ezapp-dashboard', `${APP}/dashboard`);
+await shot(lightWeb, 'web-light', '09-ezapp-editor', `${APP}/projects/${habitId}`, { before: previewReady });
+await shot(lightGuest, 'web-light', '12-ezsite-home', `${SITE}/`);
+await shot(lightWeb, 'web-light', '18-ezdefender-dashboard', `${DEF}/dashboard`);
+await shot(lightWeb, 'web-light', '19-ezdefender-report-f', `${DEF}/scans/${scanIds['blog.example']}`);
+await shot(lightMobile, 'mobile-light', '01-ezdev-home', `${DEV}/`);
+await shot(lightMobile, 'mobile-light', '04-ezdev-dashboard', `${DEV}/dashboard`);
+await shot(lightMobile, 'mobile-light', '13-ezdefender-dashboard', `${DEF}/dashboard`);
 
 await browser.close();
 for (const s of servers) s.close();
