@@ -28,7 +28,7 @@ jobs:
     environment: production
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
       EZ_DOMAIN: ${{ vars.EZ_DOMAIN }}
       CF_WORKERS_SUBDOMAIN: ${{ vars.CF_WORKERS_SUBDOMAIN }}
       EZ_EMAIL_FROM: ${{ vars.EZ_EMAIL_FROM }}
@@ -41,10 +41,10 @@ jobs:
 
       - name: Check Cloudflare secrets
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in Settings → Secrets and variables → Actions. See README."
-            exit 1
-          fi
+          missing=0
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then echo "::error::Missing Actions secret CLOUDFLARE_API_TOKEN (Settings → Secrets and variables → Actions → Secrets tab → Repository secrets)."; missing=1; else echo "CLOUDFLARE_API_TOKEN: found (${#CLOUDFLARE_API_TOKEN} characters)"; fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then echo "::error::Missing CLOUDFLARE_ACCOUNT_ID (Actions secret or variable)."; missing=1; else echo "CLOUDFLARE_ACCOUNT_ID: found (${#CLOUDFLARE_ACCOUNT_ID} characters)"; fi
+          exit $missing
 
       - name: Install Wrangler
         run: npm install --no-save wrangler@4
