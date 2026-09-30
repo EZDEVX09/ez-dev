@@ -2,8 +2,8 @@
 
 import { h, html, serve } from '../../../shared/http.js';
 import { getUser } from '../../../shared/auth.js';
-import { page, errorPage, icons } from '../../../shared/ui.js';
-import { showcase } from '../../../shared/visuals.js';
+import { page, errorPage } from '../../../shared/ui.js';
+import { productLanding } from '../../../shared/landing.js';
 import { mountBuilder } from '../../../shared/builder.js';
 import { subsidiaryRouter } from '../../../shared/subsidiary.js';
 
@@ -34,47 +34,29 @@ const router = subsidiaryRouter('ezapp');
 
 router.get('/', async (c) => {
   const user = await getUser(c.req, c.env);
-  const start = user ? '/dashboard' : '/auth/start?next=/dashboard';
-  const body = h`
-<section class="hero wrap">
-  <p class="pill reveal"><span class="dot"></span>EZ APP · an EZ DEV company</p>
-  <h1 class="display-xl reveal reveal-2">Describe it. <span class="accent-text">Get a working app.</span></h1>
-  <p class="lead reveal reveal-3">Tell EZ APP what you need in plain words. It writes the app, shows you a live preview, and keeps improving it every time you ask for a change.</p>
-  <div class="cta-row reveal reveal-3">
-    <a class="btn btn-lg" href="${start}">Start building ${icons.arrow}</a>
-    <a class="btn btn-ghost btn-lg" href="#how">How it works</a>
-  </div>
-  ${showcase('ezapp')}
-</section>
-
-<section id="how" class="wrap pad-lg">
-  <div class="section-head"><p class="eyebrow">How it works</p><h2 class="display-md">From idea to app in three steps.</h2></div>
-  <ol class="steps">
-    <li class="card"><span class="step-n">1</span><h3 class="h3">Describe</h3><p>Write what the app should do, who it's for and how it should feel.</p></li>
-    <li class="card"><span class="step-n">2</span><h3 class="h3">Preview</h3><p>Watch it appear in a live preview on desktop and mobile sizes, and read the code if you want to.</p></li>
-    <li class="card"><span class="step-n">3</span><h3 class="h3">Refine &amp; ship</h3><p>Ask for changes in chat, roll back to any version, then publish a link or download the code.</p></li>
-  </ol>
-</section>
-
-<section id="examples" class="wrap pad-lg">
-  <div class="section-head"><p class="eyebrow">What people build</p><h2 class="display-md">Small tools that do one job well.</h2></div>
-  <ul class="example-grid">
-    <li class="card"><h3 class="h3">Trackers</h3><p>Habits, workouts, budgets, reading lists, inventory.</p></li>
-    <li class="card"><h3 class="h3">Calculators</h3><p>Quotes, pricing, loan and savings, unit conversions.</p></li>
-    <li class="card"><h3 class="h3">Planners</h3><p>Schedules, meal plans, kanban boards, checklists.</p></li>
-    <li class="card"><h3 class="h3">Games &amp; quizzes</h3><p>Flashcards, trivia, word games, classroom activities.</p></li>
-  </ul>
-</section>
-
-<section class="wrap pad-lg">
-  <div class="cta-band card">
-    <div>
-      <h2 class="display-sm">Built something? Check it with EZ DEFENDER.</h2>
-      <p class="muted">Every EZ DEV account includes EZ DEFENDER's security scanner.</p>
-    </div>
-    <a class="btn btn-lg" href="${start}">Start building</a>
-  </div>
-</section>`;
+  const body = productLanding({
+    env: c.env, user, product: 'ezapp',
+    title: h`Describe it.<br><em>Get a working app.</em>`,
+    lead: 'Tell EZ APP what you need in plain words. It writes the code, shows a live preview, and keeps improving it every time you ask.',
+    quick: { name: 'prompt', label: 'Describe the app you want', placeholder: 'A habit tracker with streaks and a weekly chart…', button: 'Build it' },
+    note: 'Free to start · Live preview in seconds · Download the code any time',
+    stepsHead: { eyebrow: 'How it works', title: h`From idea to app in <em>three steps.</em>`, text: 'No setup, no templates, no code required. Just say what you want.' },
+    steps: [
+      ['Describe', 'Write what the app should do, who it’s for and how it should feel.'],
+      ['Preview', 'Watch it appear in a live preview on desktop and phone sizes. Peek at the code whenever you like.'],
+      ['Refine & ship', 'Ask for changes in chat, roll back to any version, then publish a link or download the code.'],
+    ],
+    featuresId: 'examples',
+    featuresHead: { eyebrow: 'What people build', title: h`Small tools that do <em>one job well.</em>` },
+    features: [
+      ['history', 'Trackers', 'Habits, workouts, budgets, reading lists and inventory.'],
+      ['code', 'Calculators', 'Quotes, pricing, loans and savings, unit conversions.'],
+      ['layers', 'Planners', 'Schedules, meal plans, kanban boards and checklists.'],
+      ['spark', 'Games & quizzes', 'Flashcards, trivia, word games and classroom activities.'],
+    ],
+    cross: { product: 'ezdefender', title: 'Built something? Check it with EZ DEFENDER.', text: 'Every EZ DEV account includes a security scanner for whatever you publish.', label: 'Visit EZ DEFENDER' },
+    cta: { title: h`Your next app is <em>one sentence away.</em>`, text: 'Start free with your EZ DEV account. No card needed.', label: 'Start building' },
+  });
   return html(page({ env: c.env, product: 'ezapp', user, body, nav: NAV, description: 'EZ APP turns a plain-English description into a working web app.' }));
 });
 

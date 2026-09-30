@@ -1,108 +1,148 @@
-// EZ DEV brand: logo mark and geometric wordmark, drawn as SVG strokes so the logo
-// never depends on a web font. Used by the site header/footer and by scripts/brand/build.mjs.
+// EZ DEV brand: the "Spark" mark and a monoline geometric wordmark, drawn as SVG so the logo
+// never depends on a web font. Used by the site header/footer, emails and scripts/brand/build.mjs.
 //
-// The mark is an "EZ" ligature: E and Z share one top and one bottom rail, so the two
-// letters read as a single connected piece — one family of products.
+// The mark is a rounded diamond ("a gem") lit with the brand gradient, holding a struck-through Z:
+// the Z's rails plus a short left bar read as E + Z in one stroke. Each product gets its own light.
 
-// Black & white identity. (Classes ez-tile / ez-glyph let the site recolor the logo per theme.)
 export const BRAND = {
-  ink: '#0A0A0A',
+  ink: '#05060B',
   paper: '#FFFFFF',
-  black: '#0A0A0A',
+  black: '#05060B',
   white: '#FFFFFF',
+  cyan: '#22D3EE',
+  blue: '#3D7BFF',
+  violet: '#8B5CF6',
+  pink: '#EC4899',
+  green: '#10D9A0',
 };
 
-const SW = 2.2; // stroke width on a 10-unit cap height
+/** Gradient stops per product (top-left → bottom-right). */
+export const GRADIENTS = {
+  ezdev: [BRAND.cyan, BRAND.blue, BRAND.violet],
+  ezapp: [BRAND.cyan, BRAND.blue],
+  ezsite: [BRAND.violet, BRAND.pink],
+  ezdefender: [BRAND.green, BRAND.cyan],
+};
 
-// Glyph centre-lines on a 10-unit cap height (y 1.1…8.9 keeps the stroke inside 0…10).
+const SW = 1.55; // wordmark stroke width on a 10-unit cap height
+const TRACK = 2.1;
+
+// Monoline glyph centre-lines on a 10-unit cap height (y 1…9 keeps the round stroke inside 0…10).
 const G = {
-  A: { w: 7.0, d: 'M0.7,8.9 L3.5,1.1 L6.3,8.9 M1.8,6.1 H5.2' },
-  D: { w: 7.0, d: 'M1.1,1.1 H3 A3.9,3.9 0 0 1 3,8.9 H1.1 Z' },
-  E: { w: 6.0, d: 'M5.8,1.1 H1.1 V8.9 H5.8 M1.1,5 H4.9' },
-  F: { w: 5.8, d: 'M5.6,1.1 H1.1 V8.9 M1.1,5 H4.7' },
-  I: { w: 2.2, d: 'M1.1,1.1 V8.9' },
-  N: { w: 7.0, d: 'M1.1,8.9 V1.1 L5.9,8.9 V1.1' },
-  P: { w: 6.4, d: 'M1.1,8.9 V1.1 H3.7 A2.35,2.35 0 0 1 3.7,5.8 H1.1' },
-  R: { w: 6.6, d: 'M1.1,8.9 V1.1 H3.7 A2.35,2.35 0 0 1 3.7,5.8 H1.1 M3.9,5.8 L6,8.9' },
-  S: { w: 6.4, d: 'M5.9,1.1 H2.55 A1.95,1.95 0 0 0 2.55,5 H3.85 A1.95,1.95 0 0 1 3.85,8.9 H0.5' },
-  T: { w: 6.6, d: 'M0.2,1.1 H6.4 M3.3,1.1 V8.9' },
-  V: { w: 7.0, d: 'M0.7,1.1 L3.5,8.9 L6.3,1.1' },
-  Z: { w: 6.4, d: 'M0.6,1.1 H5.8 L0.6,8.9 H5.8' },
+  A: { w: 7.2, d: 'M0.8,9 L3.6,1 L6.4,9 M1.9,6.1 H5.3' },
+  D: { w: 7.0, d: 'M1,1 H3 A4,4 0 0 1 3,9 H1 Z' },
+  E: { w: 5.8, d: 'M5.6,1 H1 V9 H5.6 M1,5 H4.6' },
+  F: { w: 5.6, d: 'M5.4,1 H1 V9 M1,5 H4.4' },
+  I: { w: 2.0, d: 'M1,1 V9' },
+  N: { w: 7.0, d: 'M1,9 V1 L6,9 V1' },
+  P: { w: 6.2, d: 'M1,9 V1 H3.6 A2.4,2.4 0 0 1 3.6,5.8 H1' },
+  R: { w: 6.4, d: 'M1,9 V1 H3.6 A2.4,2.4 0 0 1 3.6,5.8 H1 M3.8,5.8 L5.8,9' },
+  S: { w: 6.2, d: 'M5.6,1 H2.6 A2,2 0 0 0 2.6,5 H3.6 A2,2 0 0 1 3.6,9 H0.6' },
+  T: { w: 6.4, d: 'M0.4,1 H6 M3.2,1 V9' },
+  V: { w: 7.2, d: 'M0.8,1 L3.6,9 L6.4,1' },
+  Z: { w: 6.2, d: 'M0.8,1 H5.6 L0.8,9 H5.6' },
 };
-const TRACK = 1.7;
 
-// The EZ ligature as solid shapes, 12 × 10 units: E spine + shared top/bottom rails +
-// E middle bar + Z diagonal. All sub-paths run clockwise so the union fills cleanly.
-const MARK_GLYPH = {
-  w: 12,
-  d: 'M0,0 H2.2 V10 H0 Z M0,0 H12 V2.2 H0 Z M0,7.8 H12 V10 H0 Z M0,3.9 H5.2 V6.1 H0 Z M9.2,2.2 H12 L8.6,7.8 H5.8 Z',
-};
-const markPath = (gx, gy, s, color) => `<path transform="translate(${gx.toFixed(2)} ${gy.toFixed(2)}) scale(${s})" d="${MARK_GLYPH.d}" fill="${color}" class="ez-glyph"/>`;
+let uid = 0;
+const nextId = (p) => `ezg-${p}-${(uid++).toString(36)}`;
 
-const strokeAttrs = (color) =>
-  `fill="none" stroke="${color}" stroke-width="${SW}" stroke-linejoin="miter" stroke-miterlimit="2.6" stroke-linecap="butt"`;
+function gradientDef(id, product) {
+  const stops = GRADIENTS[product] || GRADIENTS.ezdev;
+  return `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0">${stops.map((c, i) => `<stop offset="${stops.length === 1 ? 0 : i / (stops.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient>`;
+}
+
+// The mark on a 32-unit box: gem + spark-Z.
+const GEM = '<rect x="4.69" y="4.69" width="22.62" height="22.62" rx="5.2" transform="rotate(45 16 16)"';
+const SPARK = 'M11.2,11.4 H20.8 L11.2,20.6 H20.8 M9.6,16 H13.6';
+
+/**
+ * Square icon mark. tile=false draws only the spark glyph (fg colour), for one-colour use.
+ */
+export function markSvg({ size = 64, product = 'ezdev', fg = BRAND.paper, title = 'EZ DEV', tile = true, bg } = {}) {
+  const id = nextId('m');
+  const fill = bg || `url(#${id})`;
+  const gem = tile ? `${GEM} fill="${fill}" class="ez-tile"/>` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="${size}" height="${size}" role="img" aria-label="${title}"><title>${title}</title>`
+    + (tile && !bg ? `<defs>${gradientDef(id, product)}</defs>` : '')
+    + gem
+    + `<path d="${SPARK}" fill="none" stroke="${fg}" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" class="ez-glyph"/>`
+    + '</svg>';
+}
 
 export function wordWidth(text) {
   let w = 0;
-  [...text].forEach((ch, i) => { w += (G[ch] || { w: 3 }).w + (i ? TRACK : 0); });
+  [...text].forEach((ch, i) => { w += (G[ch] || { w: 3.2 }).w + (i ? TRACK : 0); });
   return w;
 }
 
-function wordPaths(text, x0, y0, color) {
+// Shifts an absolute path (M/L/H/V/A/Z only) right by dx, so a whole word becomes one path
+// (one path = one gradient box, so an accent gradient runs across the whole word).
+function shift(d, dx) {
+  return d.replace(/([MLHA])([^MLHVAZ]*)/g, (_, cmd, args) => {
+    const n = args.trim().split(/[\s,]+/).map(Number);
+    if (cmd === 'H') n[0] += dx;
+    else if (cmd === 'A') n[5] += dx;
+    else n[0] += dx;
+    return cmd + n.map((v) => +v.toFixed(2)).join(',') + ' ';
+  });
+}
+
+function wordD(text, x0) {
   let x = x0;
-  let out = '';
+  let d = '';
   [...text].forEach((ch, i) => {
     if (i) x += TRACK;
     const g = G[ch];
-    if (g) out += `<path transform="translate(${x.toFixed(2)} ${y0})" d="${g.d}" ${strokeAttrs(color)}/>`;
-    x += (g || { w: 3 }).w;
+    if (g) d += shift(g.d, x);
+    x += (g || { w: 3.2 }).w;
   });
-  return out;
+  return d;
 }
 
-/** Square app-icon mark: blue tile with the white EZ ligature. */
-export function markSvg({ size = 64, bg = BRAND.ink, fg = BRAND.paper, radius = 0, title = 'EZ DEV', tile = true } = {}) {
-  const box = 25;
-  const s = 1.25; // glyph scale inside the tile
-  const gx = (box - MARK_GLYPH.w * s) / 2;
-  const gy = (box - 10 * s) / 2;
-  const tileEl = tile ? `<rect width="${box}" height="${box}" rx="${(box * radius).toFixed(2)}" fill="${bg}" class="ez-tile"/>` : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${box} ${box}" width="${size}" height="${size}" role="img" aria-label="${title}"><title>${title}</title>${tileEl}${markPath(gx, gy, s, fg)}</svg>`;
+function wordPaths(text, x0, color) {
+  return `<path d="${wordD(text, x0).trim()}" fill="none" stroke="${color}" stroke-width="${SW}" stroke-linecap="round" stroke-linejoin="round" class="ez-word"/>`;
+}
+
+function phrase(text, color) {
+  let w = 0;
+  let paths = '';
+  text.split(' ').forEach((word, i) => {
+    if (i) w += 4.6;
+    paths += wordPaths(word, w, color);
+    w += wordWidth(word);
+  });
+  return { w, paths };
 }
 
 /**
- * Horizontal lockup: mark + product word ("DEV", "APP", "SITE", "DEFENDER").
- * The mark already says EZ, so the lockup reads "EZ DEV", "EZ APP", …
+ * Horizontal lockup: gem mark + "EZ <WORD>" ("EZ DEV", "EZ APP", "EZ SITE", "EZ DEFENDER").
+ * wordColor may be 'gradient' to light the product word with the product gradient.
  */
-export function lockupSvg(word, { height = 40, color = BRAND.ink, markBg = BRAND.ink, markFg = BRAND.paper, title } = {}) {
-  const box = 25;
-  const s = 1.25;
-  const gx = (box - MARK_GLYPH.w * s) / 2;
-  const gy = (box - 10 * s) / 2;
-  const capScale = 1.16; // wordmark cap height relative to the 10-unit grid
-  const gap = 7;
-  const ww = wordWidth(word) * capScale;
-  const width = box + gap + ww + 0.6;
-  const ty = (box - 10 * capScale) / 2;
+export function lockupSvg(word, { height = 40, color = BRAND.paper, product = 'ezdev', title, markFg = BRAND.paper, accentWord = false } = {}) {
+  const box = 32;
+  const cap = 13.2; // wordmark cap height inside the 32-unit row
+  const s = cap / 10;
+  const gap = 9;
+  const ez = phrase('EZ', color);
+  const wid = nextId('w');
+  const prod = phrase(word, accentWord ? `url(#${wid})` : color);
+  const wordsW = (ez.w + 4.6 + prod.w) * s;
+  const width = box + gap + wordsW + 1;
+  const ty = (box - cap) / 2;
   const label = title || `EZ ${word}`;
+  const mark = markSvg({ size: box, product, fg: markFg, title: label }).replace(/^<svg[^>]*>/, '').replace('</svg>', '').replace(/<title>.*?<\/title>/, '');
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width.toFixed(2)} ${box}" height="${height}" width="${((width / box) * height).toFixed(1)}" role="img" aria-label="${label}"><title>${label}</title>`
-    + `<rect width="${box}" height="${box}" fill="${markBg}" class="ez-tile"/>`
-    + markPath(gx, gy, s, markFg)
-    + `<g transform="translate(${box + gap} ${ty.toFixed(2)}) scale(${capScale})">${wordPaths(word, 0, 0, color)}</g>`
+    + (accentWord ? `<defs><linearGradient id="${wid}" x1="0" y1="0" x2="1" y2="0">${(GRADIENTS[product] || GRADIENTS.ezdev).map((c, i, a) => `<stop offset="${a.length === 1 ? 0 : i / (a.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient></defs>` : '')
+    + mark
+    + `<g transform="translate(${box + gap} ${ty.toFixed(2)}) scale(${s})">${ez.paths}<g transform="translate(${(ez.w + 4.6).toFixed(2)} 0)">${prod.paths}</g></g>`
     + '</svg>';
 }
 
 /** Word-only (no mark), e.g. for large display use. */
 export function wordmarkSvg(text, { height = 40, color = BRAND.white } = {}) {
-  const words = text.split(' ');
-  let w = 0;
-  let paths = '';
-  words.forEach((word, i) => {
-    if (i) w += 4.2;
-    paths += wordPaths(word, w, 0, color);
-    w += wordWidth(word);
-  });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-0.2 -0.2 ${(w + 0.4).toFixed(2)} 10.4" height="${height}" width="${(((w + 0.4) / 10.4) * height).toFixed(1)}" role="img" aria-label="${text}"><title>${text}</title>${paths}</svg>`;
+  const { w, paths } = phrase(text, color);
+  const pad = SW / 2 + 0.1;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad + 0} ${(w + pad * 2).toFixed(2)} ${10 + pad * 2}" height="${height}" width="${(((w + pad * 2) / (10 + pad * 2)) * height).toFixed(1)}" role="img" aria-label="${text}"><title>${text}</title>${paths}</svg>`;
 }
 
 export const PRODUCT_WORD = { ezdev: 'DEV', ezapp: 'APP', ezsite: 'SITE', ezdefender: 'DEFENDER' };

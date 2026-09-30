@@ -8,7 +8,7 @@
 
 import { createServer } from 'node:http';
 import { Readable } from 'node:stream';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { createStack, PORTS, installFetchMock, claudeWriteFiles, dnsAnswer } from '../../test/harness.mjs';
@@ -16,7 +16,7 @@ import { fakeGeneration, TARGETS, DNS } from './demo-content.mjs';
 
 const require = createRequire(import.meta.url);
 let playwright;
-for (const p of ['playwright', `${process.env.HOME}/.npm-global/lib/node_modules/playwright`, '/usr/local/lib/node_modules/playwright']) {
+for (const p of ['playwright', `${process.env.HOME}/.npm-global/lib/node_modules/playwright`, '/home/claude/.npm-global/lib/node_modules/playwright', '/usr/local/lib/node_modules/playwright']) {
   try { playwright = require(p); break; } catch { /* try next */ }
 }
 if (!playwright) { console.error('Install Playwright first: npm i -g playwright && npx playwright install chromium'); process.exit(1); }
@@ -95,7 +95,17 @@ for (const [key, port] of Object.entries(PORTS)) {
 // ---------- Browser ----------
 
 const browser = await playwright.chromium.launch();
-const blockFonts = (ctx) => ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+// Web fonts: offline, so serve local copies when EZ_FONT_DIR points at a google/fonts checkout (ofl/…); otherwise block them.
+const FONT_DIR = process.env.EZ_FONT_DIR;
+const FONT_FILES = { Unbounded: 'unbounded/Unbounded[wght].ttf', Inter: 'inter/Inter[opsz,wght].ttf', 'JetBrains Mono': 'jetbrainsmono/JetBrainsMono[wght].ttf' };
+const FONT_CSS = Object.keys(FONT_FILES).map((f) => `@font-face{font-family:'${f}';font-weight:100 900;font-display:swap;src:url(https://fonts.gstatic.com/local/${encodeURIComponent(f)}.ttf) format('truetype')}`).join('\n');
+const blockFonts = (ctx) => ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => {
+  if (!FONT_DIR || !existsSync(FONT_DIR)) return r.abort();
+  const u = new URL(r.request().url());
+  if (u.hostname === 'fonts.googleapis.com') return r.fulfill({ contentType: 'text/css', body: FONT_CSS });
+  const name = decodeURIComponent(u.pathname.split('/').pop().replace(/\.ttf$/, ''));
+  return FONT_FILES[name] ? r.fulfill({ contentType: 'font/ttf', body: readFileSync(`${FONT_DIR}/${FONT_FILES[name]}`), headers: { 'Access-Control-Allow-Origin': '*' } }) : r.abort();
+});
 const web = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'dark' });
 const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, colorScheme: 'dark', isMobile: true, hasTouch: true });
 const guestWeb = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'dark' });

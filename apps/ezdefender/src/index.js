@@ -5,7 +5,7 @@ import { getUser, requireUser } from '../../../shared/auth.js';
 import { planFor, getUsage, addUsage, dayPeriod, productUrl } from '../../../shared/config.js';
 import { sendTemplate } from '../../../shared/email.js';
 import { page, errorPage, icons, flash } from '../../../shared/ui.js';
-import { showcase } from '../../../shared/visuals.js';
+import { productLanding } from '../../../shared/landing.js';
 import { subsidiaryRouter } from '../../../shared/subsidiary.js';
 import { scan, ScanError, GUIDES, normalizeTarget, normalizeDomain, checkVerification } from './scanner.js';
 
@@ -24,7 +24,6 @@ const statusLabel = { pass: 'Passed', fail: 'Failed', warn: 'Warning', info: 'In
 
 router.get('/', async (c) => {
   const user = await getUser(c.req, c.env);
-  const start = user ? '/dashboard' : '/auth/start?next=/dashboard';
   const groups = [
     ['Encryption', 'HTTPS, redirects and HSTS so traffic can’t be read or tampered with.'],
     ['Security headers', 'Content Security Policy, clickjacking, MIME sniffing, referrer and permissions policies.'],
@@ -33,43 +32,24 @@ router.get('/', async (c) => {
     ['Email & DNS', 'SPF, DMARC, CAA and DNSSEC, which stop people spoofing your domain.'],
     ['Exposed files', 'Leaked .git folders, .env secrets, database dumps and backups (verified sites only).'],
   ];
-  const body = h`
-<section class="hero wrap">
-  <p class="pill reveal"><span class="dot"></span>EZ DEFENDER · an EZ DEV company</p>
-  <h1 class="display-xl reveal reveal-2">Find the weak spots <span class="accent-text">before attackers do.</span></h1>
-  <p class="lead reveal reveal-3">EZ DEFENDER scans your website or web app, grades its security, and explains every fix in plain English. Then it keeps watch and alerts you when something changes.</p>
-  <div class="cta-row reveal reveal-3">
-    <a class="btn btn-lg" href="${start}">Scan my site ${icons.arrow}</a>
-    <a class="btn btn-ghost btn-lg" href="#checks">What we check</a>
-  </div>
-  ${showcase('ezdefender')}
-</section>
-
-<section id="checks" class="wrap pad-lg">
-  <div class="section-head"><p class="eyebrow">What we check</p><h2 class="display-md">Over 25 checks across six areas.</h2></div>
-  <ul class="example-grid three">
-    ${groups.map(([t, d]) => h`<li class="card"><h3 class="h3">${t}</h3><p>${d}</p></li>`)}
-  </ul>
-</section>
-
-<section id="how" class="wrap pad-lg">
-  <div class="section-head"><p class="eyebrow">How it works</p><h2 class="display-md">Scan. Fix. Stay protected.</h2></div>
-  <ol class="steps">
-    <li class="card"><span class="step-n">1</span><h3 class="h3">Scan any URL</h3><p>Get a grade from A+ to F in seconds, with every finding explained.</p></li>
-    <li class="card"><span class="step-n">2</span><h3 class="h3">Verify you own it</h3><p>Add a DNS record or a small file to unlock deep checks for leaked files and secrets.</p></li>
-    <li class="card"><span class="step-n">3</span><h3 class="h3">Monitor daily</h3><p>We rescan verified sites every day and alert you when your grade drops or a new issue appears.</p></li>
-  </ol>
-</section>
-
-<section class="wrap pad-lg">
-  <div class="cta-band card">
-    <div>
-      <h2 class="display-sm">Only scan what you’re allowed to.</h2>
-      <p class="muted">Quick scans read only what any browser can see. Deep checks run only on sites you’ve verified you own.</p>
-    </div>
-    <a class="btn btn-lg" href="${start}">Get started</a>
-  </div>
-</section>`;
+  const body = productLanding({
+    env: c.env, user, product: 'ezdefender',
+    title: h`Find the weak spots<br><em>before attackers do.</em>`,
+    lead: 'EZ DEFENDER scans your website or web app, grades its security from A+ to F, and explains every fix in plain English. Then it keeps watch.',
+    quick: { name: 'url', label: 'Website address to scan', placeholder: 'yourwebsite.com', button: 'Scan it', inputmode: 'url' },
+    note: 'Quick scans read only what any browser can see · Deep checks need proof you own the site',
+    stepsHead: { eyebrow: 'How it works', title: h`Scan. Fix. <em>Stay protected.</em>`, text: 'Security that speaks human, from the first scan to daily monitoring.' },
+    steps: [
+      ['Scan any URL', 'Get a grade from A+ to F in seconds, with every finding explained.'],
+      ['Verify you own it', 'Add a DNS record or a small file to unlock deep checks for leaked files and secrets.'],
+      ['Monitor daily', 'We rescan verified sites every day and alert you when your grade drops or a new issue appears.'],
+    ],
+    featuresId: 'checks',
+    featuresHead: { eyebrow: 'What we check', title: h`Over 25 checks across <em>six areas.</em>` },
+    features: groups.map(([t, d], i) => [['lock', 'shield', 'user', 'eye', 'mail', 'alert'][i], t, d]),
+    cross: { product: 'ezapp', title: 'Need something to protect?', text: 'Build an app with EZ APP or a website with EZ SITE, then scan it here with the same account.', label: 'Visit EZ APP' },
+    cta: { title: h`Only scan what you’re <em>allowed to.</em>`, text: 'Quick scans read public information. Deep checks run only on sites you’ve verified you own.', label: 'Scan my site' },
+  });
   return html(page({ env: c.env, product: 'ezdefender', user, body, nav: NAV, description: 'EZ DEFENDER scans websites and apps for security issues and explains every fix.' }));
 });
 
@@ -91,11 +71,11 @@ router.get('/dashboard', async (c) => {
   const body = h`
 <section class="wrap pad-lg">
   <div class="page-head">
-    <div><p class="eyebrow">Dashboard</p><h1 class="display-md">Security overview</h1></div>
+    <div><p class="eyebrow">Dashboard</p><h1 class="display-md">Security <em>overview</em></h1></div>
     <div class="usage-pill"><span>${usedToday} / ${plan.scansPerDay} scans today</span><meter min="0" max="${plan.scansPerDay}" value="${Math.min(usedToday, plan.scansPerDay)}"></meter></div>
   </div>
   ${flash(err)}
-  <form class="card scan-form" method="post" action="/scans" data-busy="Scanning… this takes a few seconds">
+  <form class="card scan-form glow-edge" method="post" action="/scans" data-busy="Scanning… this takes a few seconds">
     <label for="url" class="h3">Scan a website or web app</label>
     <div class="scan-row">
       <input id="url" name="url" inputmode="url" autocomplete="url" placeholder="example.com" required value="${prefill}">

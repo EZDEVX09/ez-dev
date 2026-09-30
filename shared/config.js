@@ -1,9 +1,9 @@
 // Product catalogue, URLs and plan limits shared by all four Workers.
 
 export const PRODUCTS = {
-  ezdev: { key: 'ezdev', name: 'EZ DEV', tagline: 'The EZ family of builder and security tools', accent: 'lime', envUrl: 'EZDEV_URL' },
+  ezdev: { key: 'ezdev', name: 'EZ DEV', tagline: 'The EZ family of builder and security tools', accent: 'aurora', envUrl: 'EZDEV_URL' },
   ezapp: { key: 'ezapp', name: 'EZ APP', tagline: 'AI app builder', accent: 'blue', envUrl: 'EZAPP_URL' },
-  ezsite: { key: 'ezsite', name: 'EZ SITE', tagline: 'AI website builder', accent: 'orange', envUrl: 'EZSITE_URL' },
+  ezsite: { key: 'ezsite', name: 'EZ SITE', tagline: 'AI website builder', accent: 'violet', envUrl: 'EZSITE_URL' },
   ezdefender: { key: 'ezdefender', name: 'EZ DEFENDER', tagline: 'Website & app security toolbox', accent: 'green', envUrl: 'EZDEFENDER_URL' },
 };
 

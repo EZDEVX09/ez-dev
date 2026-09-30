@@ -1,6 +1,6 @@
 // EZ DEV — parent company site, accounts and single sign-on for the EZ family.
 
-import { h, raw, html, json, allowFormTargets, serve, Router, Redirect, HttpError, assertSameOrigin, readForm, clientIp, randomId, now, redirect } from '../../../shared/http.js';
+import { h, raw, html, json, serve, Router, Redirect, HttpError, assertSameOrigin, readForm, clientIp, randomId, now, redirect } from '../../../shared/http.js';
 import {
   getUser, createSession, hashPassword, verifyPassword, validatePassword, normalizeEmail, rateLimit,
   destroyAllSessions, clearSessionCookie, issueHandoffCode, safePath,
@@ -11,14 +11,15 @@ import {
   billingEnabled, getPlanPrices, formatPrice, createCheckout, createPortal, applySubscription, fetchSubscription,
   cancelSubscriptionNow, verifyWebhook, planName, formatDate, stripe,
 } from '../../../shared/billing.js';
-import { PLANS, planFor, getUsage, monthPeriod, dayPeriod, productUrl, allOrigins } from '../../../shared/config.js';
-import { page, errorPage, icons, productIcon, flash } from '../../../shared/ui.js';
+import { PLANS, PRODUCTS, planFor, getUsage, monthPeriod, dayPeriod, productUrl } from '../../../shared/config.js';
+import { page, errorPage, icons, flash, gem } from '../../../shared/ui.js';
+import { ctaPanel } from '../../../shared/landing.js';
 import { showcase } from '../../../shared/visuals.js';
-import { lockupSvg } from '../../../shared/logo.js';
 import { mountAvatarRead, mountAvatarWrite, avatarUrl } from '../../../shared/avatar.js';
 
 const NAV = [
   { href: '/#products', label: 'Products' },
+  { href: '/#why', label: 'Why EZ' },
   { href: '/#ecosystem', label: 'Ecosystem' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/contact', label: 'Contact' },
@@ -34,138 +35,195 @@ router.get('/', async (c) => {
   const user = await getUser(c.req, c.env);
   const url = (k) => productUrl(c.env, k);
   const start = user ? '/dashboard' : '/signup';
-  const products = [
-    { key: 'ezapp', label: 'AI APP BUILDER', accent: 'blue', desc: "Describe the app you want in plain words. EZ APP's AI turns your idea into a working web app you can preview, refine and publish.", feats: ['Prompt-to-app generation', 'Refine by chatting, with full version history', 'Publish a link or download the code'] },
-    { key: 'ezsite', label: 'AI WEBSITE BUILDER', accent: 'orange', desc: 'Tell EZ SITE about your business and get a polished multi-page website: planned, written and designed, ready to go live.', feats: ['Pages, copy and design generated for you', 'Edit anything by asking', 'One-click publishing'] },
-    { key: 'ezdefender', label: 'CYBER SECURITY TOOLBOX', accent: 'green', desc: 'A security toolbox for websites and apps. Find weak spots, fix them with plain-English guides, and keep watch over time.', feats: ['Security scans for sites and apps', 'Plain-English fix guides', 'Scheduled monitoring and alerts'] },
-  ];
   const signedOut = c.url.searchParams.get('signed_out');
+  const products = [
+    { key: 'ezapp', kind: 'AI app builder', title: 'Apps from a sentence', desc: 'Describe the app you want in plain words. EZ APP turns it into a working web app you can preview, refine and publish.', feats: ['Prompt-to-app generation', 'Refine by chatting, with version history', 'Publish a link or download the code'] },
+    { key: 'ezsite', kind: 'AI website builder', title: 'Websites, written & designed', desc: 'Tell EZ SITE about your business and get a polished multi-page website: planned, written and designed, ready to go live.', feats: ['Pages, copy and design generated for you', 'Edit anything by asking', 'One-click publishing'] },
+    { key: 'ezdefender', kind: 'Security toolbox', title: 'Protection that explains itself', desc: 'Scan websites and apps for weak spots, fix them with plain-English guides, and keep watch with daily monitoring.', feats: ['A+ to F security grades', 'Plain-English fix guides', 'Daily monitoring and alerts'] },
+  ];
+  const accent = (k) => PRODUCTS[k].accent;
 
-  const name = (k) => (k === 'ezapp' ? 'EZ APP' : k === 'ezsite' ? 'EZ SITE' : 'EZ DEFENDER');
-  const ticker = ['EZ APP', 'EZ SITE', 'EZ DEFENDER', 'Build it', 'Launch it', 'Lock it down'];
   const body = h`
 ${signedOut ? h`<div class="wrap">${flash('You have been signed out of every EZ product.', 'ok')}</div>` : ''}
-<section class="hx wrap">
-  <div class="hx-top reveal"><span class="hx-dot"></span><span>One account · Three products</span><span class="hx-top-r">EZ APP / EZ SITE / EZ DEFENDER</span></div>
-  <h1 class="hx-title reveal reveal-2">What will you <em>build</em> today?</h1>
-  <form class="hx-box reveal reveal-3" action="/start" method="get" id="hx-form">
-    <fieldset class="hx-tabs">
-      <legend class="sr-only">What do you want to do?</legend>
-      <label><input type="radio" name="mode" value="app" checked><span>Build an app</span></label>
-      <label><input type="radio" name="mode" value="site"><span>Make a website</span></label>
-      <label><input type="radio" name="mode" value="scan"><span>Scan my site</span></label>
-    </fieldset>
-    <div class="hx-input">
-      <label class="sr-only" for="hx-q">Describe what you want</label>
-      <textarea id="hx-q" name="q" rows="2" maxlength="4000" required placeholder="A habit tracker with streaks and a weekly chart"></textarea>
-      <button class="btn btn-lg hx-go" type="submit"><span id="hx-go-label">Build it</span> ${icons.arrow}</button>
-    </div>
-    <div class="hx-foot">
-      <span class="hx-hint" id="hx-hint">EZ APP writes the code, shows a live preview, and keeps improving it as you ask.</span>
-      <span class="hx-kbd" aria-hidden="true">Free to start · No card needed</span>
-    </div>
-  </form>
-  <ol class="hx-index reveal reveal-4">
-    <li><a href="${url('ezapp')}"><span class="hx-n">01</span><strong>EZ APP</strong><span class="hx-d">Apps from a sentence</span>${icons.external}</a></li>
-    <li><a href="${url('ezsite')}"><span class="hx-n">02</span><strong>EZ SITE</strong><span class="hx-d">Websites, written &amp; designed</span>${icons.external}</a></li>
-    <li><a href="${url('ezdefender')}"><span class="hx-n">03</span><strong>EZ DEFENDER</strong><span class="hx-d">Security scans &amp; monitoring</span>${icons.external}</a></li>
-  </ol>
+<section class="hero">
+  <div class="hero-bg" aria-hidden="true"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+  <div class="wrap hero-inner">
+    <a class="pill reveal" href="#products"><span class="pill-tag">New</span>One account · three AI products ${icons.arrow}</a>
+    <h1 class="display-xl reveal reveal-2">Build anything.<br><em>Ship it secure.</em></h1>
+    <p class="lead reveal reveal-3">Describe an app or a website and our AI builds it. Then EZ DEFENDER keeps it safe. No code required.</p>
+    <form class="cmd reveal reveal-4" action="/start" method="get" id="hx-form" data-mode="app">
+      <fieldset class="cmd-tabs">
+        <legend class="sr-only">What do you want to do?</legend>
+        <label><input type="radio" name="mode" value="app" checked><span>${icons.app}Build an app</span></label>
+        <label><input type="radio" name="mode" value="site"><span>${icons.site}Make a website</span></label>
+        <label><input type="radio" name="mode" value="scan"><span>${icons.shield}Scan my site</span></label>
+      </fieldset>
+      <div class="cmd-input">
+        <label class="sr-only" for="hx-q">Describe what you want</label>
+        <textarea id="hx-q" name="q" rows="2" maxlength="4000" required placeholder="A habit tracker with streaks and a weekly chart"></textarea>
+        <button class="btn btn-lg cmd-go" type="submit"><span id="hx-go-label">Build it</span> ${icons.arrow}</button>
+      </div>
+      <div class="cmd-foot">
+        <span id="hx-hint">EZ APP writes the code, shows a live preview, and keeps improving it as you ask.</span>
+        <span class="cmd-kbd" aria-hidden="true"><kbd>Enter</kbd> to go</span>
+      </div>
+    </form>
+    <ul class="trust reveal reveal-5">
+      <li>${icons.check}Free to start</li>
+      <li>${icons.check}No card needed</li>
+      <li>${icons.check}Own your code</li>
+    </ul>
+  </div>
+  <div class="wrap stage reveal reveal-5">${showcase('ezdev')}</div>
 </section>
 
-<div class="ed-ticker" aria-hidden="true"><div>${[...ticker, ...ticker, ...ticker, ...ticker].map((t) => h`<span>${t}</span>`)}</div></div>
-
-<section class="wrap ed-section">${showcase('ezdev')}</section>
-
-<section id="products" class="wrap ed-section">
-  <header class="ed-head">
-    <span class="ed-num">(01) The EZ family</span>
-    <h2 class="ed-h2">Three companies.<br><em>One mission.</em></h2>
-    <p>Each EZ subsidiary focuses on one job and does it well. Use one, or run all three together.</p>
+<section id="products" class="wrap section">
+  <header class="sec-head">
+    <p class="eyebrow">The EZ family</p>
+    <h2 class="display-md">Three products. <em>One universe.</em></h2>
+    <p class="lead">Each EZ company does one job brilliantly. Use one, or run all three with a single account.</p>
   </header>
-  <div class="ed-products">
-    ${products.map((p, i) => h`
-    <article class="ed-product">
-      <div class="ed-product-top"><span>0${i + 1}</span><span>${p.label}</span></div>
-      <h3>${name(p.key)}</h3>
-      <p>${p.desc}</p>
-      <ul class="ed-list">${p.feats.map((f) => h`<li>${f}</li>`)}</ul>
-      <a class="ed-link" href="${url(p.key)}">Visit ${name(p.key)} ${icons.external}</a>
+  <div class="prod-cards">
+    ${products.map((p) => h`
+    <article class="prod-card accent-${accent(p.key)}">
+      <div class="prod-top">${gem(p.key, 52)}<span class="prod-kind">${p.kind}</span></div>
+      <h3>${PRODUCTS[p.key].name}</h3>
+      <p><strong class="grad-text">${p.title}.</strong> ${p.desc}</p>
+      <ul class="feat-list">${p.feats.map((f) => h`<li>${icons.check}${f}</li>`)}</ul>
+      <a class="prod-link stretch" href="${url(p.key)}">Explore ${PRODUCTS[p.key].name} ${icons.external}</a>
     </article>`)}
   </div>
 </section>
 
-<section id="ecosystem" class="ed-invert">
-  <div class="wrap ed-invert-grid">
-    <div>
-      <span class="ed-num">(02) Better together</span>
-      <h2 class="ed-h2">Build with EZ APP and EZ SITE. <em>Protect with EZ DEFENDER.</em></h2>
-      <p>One EZ DEV account signs you in everywhere. Whatever you build, EZ DEFENDER can check it from day one.</p>
-      <a class="btn btn-dark btn-lg" href="${start}">${user ? 'Open your dashboard' : 'Create an EZ DEV account'} ${icons.arrow}</a>
+<section class="wrap section">
+  <header class="sec-head">
+    <p class="eyebrow">How it flows</p>
+    <h2 class="display-md">From idea to protected <em>in minutes.</em></h2>
+  </header>
+  <ol class="flow">
+    <li class="flow-step accent-blue"><span class="flow-orb">${icons.spark}</span><div><h3>Describe</h3><p>Say what you want in plain words. EZ APP or EZ SITE drafts it with AI in seconds.</p><span class="badge">EZ APP · EZ SITE</span></div></li>
+    <li class="flow-step accent-violet"><span class="flow-orb">${icons.globe}</span><div><h3>Launch</h3><p>Refine by chatting, then publish to a live link or download the code.</p><span class="badge">One click</span></div></li>
+    <li class="flow-step accent-green"><span class="flow-orb">${icons.shield}</span><div><h3>Defend</h3><p>EZ DEFENDER grades its security, explains every fix and watches it daily.</p><span class="badge">EZ DEFENDER</span></div></li>
+  </ol>
+</section>
+
+<section id="why" class="wrap section">
+  <header class="sec-head">
+    <p class="eyebrow">Why EZ DEV</p>
+    <h2 class="display-md">Software, made <em>easy</em> for everyone.</h2>
+  </header>
+  <div class="bento">
+    <div class="bento-card wide accent-blue">
+      <span class="icon-tile">${icons.spark}</span>
+      <div class="typing" aria-hidden="true"><span>&gt;</span> An invoice calculator with tax, discounts and a PDF-ready summary<i></i></div>
+      <h3>AI does the heavy lifting</h3>
+      <p>Start from an idea, not a blank screen. Our builders draft the first version for you, then improve it every time you ask.</p>
     </div>
-    <div class="org" role="img" aria-label="EZ DEV is the parent company of EZ APP, EZ SITE and EZ DEFENDER">
-      <div class="org-parent">${raw(lockupSvg('DEV', { height: 30, color: 'currentColor' }).replace('role="img"', 'aria-hidden="true"'))}<span>PARENT COMPANY</span></div>
-      <div class="org-stem"></div>
-      <div class="org-bar"></div>
-      <div class="org-kids">
-        <div class="org-kid"><strong>EZ APP</strong><span>Apps</span></div>
-        <div class="org-kid"><strong>EZ SITE</strong><span>Websites</span></div>
-        <div class="org-kid"><strong>EZ DEFENDER</strong><span>Security</span></div>
+    <div class="bento-card accent-green">
+      <div class="gauge" aria-hidden="true"><b>A+</b></div>
+      <h3>Security built in</h3>
+      <p>EZ DEFENDER is part of the family, so protection is never an afterthought.</p>
+    </div>
+    <div class="bento-card accent-aurora">
+      <span class="icon-tile">${icons.user}</span>
+      <h3>One account, every tool</h3>
+      <p>Sign in once and move between EZ APP, EZ SITE and EZ DEFENDER.</p>
+    </div>
+    <div class="bento-card accent-violet">
+      <div class="ver-dots" aria-hidden="true"><i class="on"></i><b></b><i class="on"></i><b></b><i class="on"></i><b></b><i></i></div>
+      <h3>Every version saved</h3>
+      <p>Roll back to any point. Nothing you build is ever lost.</p>
+    </div>
+    <div class="bento-card accent-blue">
+      <pre class="code-snip" aria-hidden="true"><span class="c">&lt;!-- index.html --&gt;</span>
+<span class="k">&lt;main</span> <span class="s">class="app"</span><span class="k">&gt;</span>
+  …
+<span class="k">&lt;/main&gt;</span></pre>
+      <h3>Own your code</h3>
+      <p>Plain HTML, CSS and JavaScript. Download it any time.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ecosystem" class="wrap section">
+  <div class="eco">
+    <div class="eco-copy">
+      <p class="eyebrow">Better together</p>
+      <h2 class="display-md">Build with EZ APP and EZ SITE. <em>Protect with EZ DEFENDER.</em></h2>
+      <p class="lead">EZ DEV is the parent company at the centre. One account signs you in everywhere, and whatever you build can be checked from day one.</p>
+      <ul class="eco-list">
+        ${products.map((p) => h`<li class="accent-${accent(p.key)}">${gem(p.key, 34)}<div><strong>${PRODUCTS[p.key].name}</strong><span>${p.kind}</span></div></li>`)}
+      </ul>
+      <a class="btn btn-lg" href="${start}">${user ? 'Open your dashboard' : 'Create your EZ DEV account'} ${icons.arrow}</a>
+    </div>
+    <div class="orbit" role="img" aria-label="EZ DEV is the parent company of EZ APP, EZ SITE and EZ DEFENDER">
+      <div class="orbit-ring r2"></div>
+      <div class="orbit-ring r1"></div>
+      <div class="gem-core">${gem('ezdev', 160)}</div>
+      <div class="orbit-spin">
+        <div class="orbit-node n1 accent-blue"><div>${gem('ezapp', 62)}<span>EZ APP</span></div></div>
+        <div class="orbit-node n2 accent-violet"><div>${gem('ezsite', 62)}<span>EZ SITE</span></div></div>
+        <div class="orbit-node n3 accent-green"><div>${gem('ezdefender', 62)}<span>EZ DEFENDER</span></div></div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="company" class="wrap ed-section">
-  <header class="ed-head">
-    <span class="ed-num">(03) Why EZ DEV</span>
-    <h2 class="ed-h2">Software, made <em>easy</em> for everyone.</h2>
-    <p>From your first idea to a secure, published product, without the usual complexity.</p>
-  </header>
-  <div class="ed-cells">
-    <div class="ed-cell"><span class="ed-num">01</span><h3>AI does the heavy lifting</h3><p>Start from an idea, not a blank screen. Our builders draft the first version for you.</p></div>
-    <div class="ed-cell"><span class="ed-num">02</span><h3>Security built in</h3><p>EZ DEFENDER is part of the family, so protection isn't an afterthought.</p></div>
-    <div class="ed-cell"><span class="ed-num">03</span><h3>One account, every tool</h3><p>Sign in once and move between EZ APP, EZ SITE and EZ DEFENDER.</p></div>
-    <div class="ed-cell"><span class="ed-num">04</span><h3>For beginners and pros</h3><p>Simple by default, and you can always download the code.</p></div>
-  </div>
-</section>
-
-<section class="wrap ed-cta">
-  <h2 class="ed-h2">Ready to build<br>the <em>EZ</em> way?</h2>
-  <div class="ed-cta-row">
-    <p>Start free. Pick a product, or use the whole family.</p>
-    <div class="cta-row">
-      <a class="btn btn-lg" href="${start}">Get started ${icons.arrow}</a>
-      <a class="btn btn-ghost btn-lg" href="/contact">Talk to us</a>
-    </div>
-  </div>
-</section>`;
+${ctaPanel({
+  title: h`Ready to build <em>the EZ way?</em>`,
+  text: 'Start free. Pick a product, or use the whole family.',
+  primary: { href: start, label: 'Get started' },
+  secondary: { href: '/contact', label: 'Talk to us' },
+})}`;
   return html(page({ env: c.env, product: 'ezdev', user, body, nav: NAV, scripts: ['/assets/hero.js'] }));
 });
 
 // ---------- Sign up / sign in ----------
 
+const AUTH_POINTS = [
+  ['ezapp', 'EZ APP', 'Turn ideas into working apps'],
+  ['ezsite', 'EZ SITE', 'Websites written and designed for you'],
+  ['ezdefender', 'EZ DEFENDER', 'Security scans and daily monitoring'],
+];
+
+function authShell(card, { title, text } = {}) {
+  return h`
+<section class="wrap pad-lg">
+  <div class="auth-wrap">
+    <div class="auth-side">
+      <p class="eyebrow">One account</p>
+      <h2 class="display-md">${title || h`Everything EZ, <em>one sign-in.</em>`}</h2>
+      <p class="lead">${text || 'Your EZ DEV account works across every EZ product.'}</p>
+      <ul class="auth-points">${AUTH_POINTS.map(([k, n, d]) => h`<li>${gem(k, 32)}<div><strong>${n}</strong><br><span class="muted small">${d}</span></div></li>`)}</ul>
+    </div>
+    ${card}
+  </div>
+</section>`;
+}
+
 function authForm({ mode, error, values = {}, next }) {
   const isSignup = mode === 'signup';
-  return h`
-<section class="auth wrap narrow pad-lg">
-  <h1 class="display-sm">${isSignup ? 'Create your EZ DEV account' : 'Sign in to EZ DEV'}</h1>
-  <p class="muted">${isSignup ? 'One account for EZ APP, EZ SITE and EZ DEFENDER.' : 'Welcome back.'}</p>
-  ${flash(values.msg, 'ok')}${flash(error)}
-  <form method="post" class="card form" action="/${mode}${next ? `?next=${encodeURIComponent(next)}` : ''}">
-    ${isSignup ? h`<label for="name">Your name</label><input id="name" name="name" autocomplete="name" maxlength="80" required value="${values.name || ''}">` : ''}
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required value="${values.email || ''}">
-    <label for="password">Password</label>
-    <input id="password" name="password" type="password" autocomplete="${isSignup ? 'new-password' : 'current-password'}" minlength="${isSignup ? 10 : 1}" maxlength="200" required>
-    ${isSignup ? h`<p class="hint">At least 10 characters.</p>
-      <label class="checkbox"><input type="checkbox" name="terms" value="1" required> <span>I agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</span></label>` : ''}
-    <button class="btn btn-block" type="submit">${isSignup ? 'Create account' : 'Sign in'}</button>
-  </form>
-  <p class="muted center">${isSignup
-    ? h`Already have an account? <a href="/login${next ? `?next=${encodeURIComponent(next)}` : ''}">Sign in</a>`
-    : h`New to EZ DEV? <a href="/signup${next ? `?next=${encodeURIComponent(next)}` : ''}">Create an account</a>`}</p>
-  ${isSignup ? '' : h`<p class="muted small center"><a href="/forgot">Forgot your password?</a></p>`}
-</section>`;
+  const q = next ? `?next=${encodeURIComponent(next)}` : '';
+  return authShell(h`
+    <div class="card auth-card glow-edge">
+      <h1>${isSignup ? 'Create your account' : 'Welcome back'}</h1>
+      <p class="muted">${isSignup ? 'Free to start. One account for EZ APP, EZ SITE and EZ DEFENDER.' : 'Sign in to EZ DEV.'}</p>
+      ${flash(values.msg, 'ok')}${flash(error)}
+      <form method="post" class="form" action="/${mode}${q}">
+        ${isSignup ? h`<label for="name">Your name</label><input id="name" name="name" autocomplete="name" maxlength="80" required value="${values.name || ''}">` : ''}
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required value="${values.email || ''}">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="${isSignup ? 'new-password' : 'current-password'}" minlength="${isSignup ? 10 : 1}" maxlength="200" required>
+        ${isSignup ? h`<p class="hint">At least 10 characters.</p>
+          <label class="checkbox"><input type="checkbox" name="terms" value="1" required> <span>I agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</span></label>`
+          : h`<p class="hint"><a href="/forgot">Forgot your password?</a></p>`}
+        <button class="btn btn-lg btn-block" type="submit">${isSignup ? 'Create account' : 'Sign in'} ${icons.arrow}</button>
+      </form>
+      <p class="auth-alt">${isSignup
+        ? h`Already have an account? <a href="/login${q}">Sign in</a>`
+        : h`New to EZ DEV? <a href="/signup${q}">Create an account</a>`}</p>
+    </div>`);
 }
 
 router.get('/signup', async (c) => {
@@ -271,7 +329,7 @@ router.get('/dashboard', async (c) => {
   ]);
   const tiles = [
     { key: 'ezapp', name: 'EZ APP', accent: 'blue', stat: `${apps.n} app${apps.n === 1 ? '' : 's'}`, cta: 'Open EZ APP' },
-    { key: 'ezsite', name: 'EZ SITE', accent: 'orange', stat: `${sites.n} website${sites.n === 1 ? '' : 's'}`, cta: 'Open EZ SITE' },
+    { key: 'ezsite', name: 'EZ SITE', accent: 'violet', stat: `${sites.n} website${sites.n === 1 ? '' : 's'}`, cta: 'Open EZ SITE' },
     { key: 'ezdefender', name: 'EZ DEFENDER', accent: 'green', stat: `${monitored.n} monitored · ${alerts.n} new alert${alerts.n === 1 ? '' : 's'}`, cta: 'Open EZ DEFENDER' },
   ];
   const body = h`
@@ -283,20 +341,20 @@ router.get('/dashboard', async (c) => {
       <span>Please confirm your email address. We sent a link to <strong>${user.email}</strong>.</span>
       <button class="btn btn-ghost btn-sm" type="submit">Resend email</button></form>` : ''}
   <div class="page-head">
-    <div><p class="eyebrow">EZ DEV dashboard</p><h1 class="display-md">Hi, ${user.name.split(' ')[0]}.</h1></div>
+    <div><p class="eyebrow">EZ DEV dashboard</p><h1 class="display-md">Hi, <em>${user.name.split(' ')[0]}.</em></h1></div>
     <a class="btn btn-ghost" href="/account">Account settings</a>
   </div>
   <div class="product-grid">
     ${tiles.map((t) => h`
     <a class="card tile accent-${t.accent}" href="${productUrl(env, t.key)}/dashboard">
-      <span class="icon-tile">${productIcon[t.key]}</span>
+      ${gem(t.key, 52)}
       <span class="product-name">${t.name}</span>
       <span class="muted">${t.stat}</span>
       <span class="tile-cta">${t.cta} ${icons.arrow}</span>
     </a>`)}
   </div>
   <div class="card usage-card">
-    <div class="row-between"><h2 class="h3">Your plan: ${plan.name}</h2><a href="/pricing">Compare plans</a></div>
+    <div class="row-between"><h2 class="h3">Your plan <span class="badge">${plan.name}</span></h2><a class="btn btn-ghost btn-sm" href="/pricing">Compare plans</a></div>
     <div class="usage-grid">
       <div><label for="u-gen">AI builds this month</label><meter id="u-gen" min="0" max="${plan.aiGenerationsPerMonth}" value="${Math.min(gens, plan.aiGenerationsPerMonth)}"></meter><span class="muted small">${gens} of ${plan.aiGenerationsPerMonth}</span></div>
       <div><label for="u-scan">Security scans today</label><meter id="u-scan" min="0" max="${plan.scansPerDay}" value="${Math.min(scans, plan.scansPerDay)}"></meter><span class="muted small">${scans} of ${plan.scansPerDay}</span></div>
@@ -314,7 +372,7 @@ router.get('/account', async (c) => {
   const body = h`
 <section class="wrap narrow pad-lg">
   <p class="eyebrow">Account</p>
-  <h1 class="display-md">Account settings</h1>
+  <h1 class="display-md">Account <em>settings</em></h1>
   ${flash(msg, 'ok')}${flash(err)}
   <div class="card" id="photo">
     <h2 class="h3">Profile picture</h2>
@@ -450,13 +508,16 @@ router.get('/pricing', async (c) => {
 
   const body = h`
 <section class="wrap pad-lg">
-  <p class="eyebrow">Pricing</p>
-  <h1 class="display-md">One account. Every EZ product.</h1>
-  <p class="lead">Every plan includes EZ APP, EZ SITE and EZ DEFENDER. AI builds are shared between EZ APP and EZ SITE.</p>
+  <header class="sec-head">
+    <p class="eyebrow">Pricing</p>
+    <h1 class="display-md">One account. <em>Every EZ product.</em></h1>
+    <p class="lead">Every plan includes EZ APP, EZ SITE and EZ DEFENDER. AI builds are shared between EZ APP and EZ SITE.</p>
+  </header>
   ${c.url.searchParams.get('canceled') ? flash('Checkout canceled. You have not been charged.', 'info') : ''}
   <div class="plan-grid">
     ${Object.entries(PLANS).map(([key, p]) => h`
     <div class="card plan ${key === 'pro' ? 'plan-featured' : ''}">
+      ${key === 'pro' ? h`<span class="plan-flag">Most popular</span>` : ''}
       <h2 class="h3">${p.name}</h2>
       <p class="price">${display(key)}<span class="muted small">${key === 'free' ? '' : ' / month'}</span></p>
       <ul class="check-list">
@@ -468,7 +529,7 @@ router.get('/pricing', async (c) => {
       ${action(key, p)}
     </div>`)}
   </div>
-  <p class="muted small">Payments are handled securely by Stripe. Cancel or change plans any time from your account.</p>
+  <p class="muted small center">${icons.lock} Payments are handled securely by Stripe. Cancel or change plans any time from your account.</p>
 </section>`;
   return html(page({ env: c.env, product: 'ezdev', title: 'Pricing', user, body, nav: NAV }));
 });
@@ -597,16 +658,18 @@ router.post('/account/notifications', async (c) => {
 
 function forgotPage(env, { msg, error, email = '' } = {}) {
   return page({ env, product: 'ezdev', title: 'Reset password', nav: NAV, body: h`
-<section class="auth wrap narrow pad-lg">
-  <h1 class="display-sm">Reset your password</h1>
-  <p class="muted">Enter your account email and we'll send you a link to choose a new password.</p>
-  ${flash(msg, 'ok')}${flash(error)}
-  <form method="post" class="card form" action="/forgot">
-    <label for="email">Email</label>
-    <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required value="${email}">
-    <button class="btn btn-block" type="submit">Send reset link</button>
-  </form>
-  <p class="muted center"><a href="/login">Back to sign in</a></p>
+<section class="wrap pad-lg">
+  <div class="card auth-card auth-simple glow-edge">
+    <h1>Reset your password</h1>
+    <p class="muted">Enter your account email and we'll send you a link to choose a new password.</p>
+    ${flash(msg, 'ok')}${flash(error)}
+    <form method="post" class="form" action="/forgot">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required value="${email}">
+      <button class="btn btn-lg btn-block" type="submit">Send reset link</button>
+    </form>
+    <p class="auth-alt"><a href="/login">Back to sign in</a></p>
+  </div>
 </section>` });
 }
 
@@ -631,16 +694,18 @@ router.post('/forgot', async (c) => {
 
 function resetPage(env, { token, error }) {
   return page({ env, product: 'ezdev', title: 'Choose a new password', nav: NAV, body: h`
-<section class="auth wrap narrow pad-lg">
-  <h1 class="display-sm">Choose a new password</h1>
-  ${flash(error)}
-  <form method="post" class="card form" action="/reset">
-    <input type="hidden" name="token" value="${token}">
-    <label for="password">New password</label>
-    <input id="password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="200" required>
-    <p class="hint">At least 10 characters. This signs you out on every device.</p>
-    <button class="btn btn-block" type="submit">Save new password</button>
-  </form>
+<section class="wrap pad-lg">
+  <div class="card auth-card auth-simple glow-edge">
+    <h1>Choose a new password</h1>
+    ${flash(error)}
+    <form method="post" class="form" action="/reset">
+      <input type="hidden" name="token" value="${token}">
+      <label for="password">New password</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="200" required>
+      <p class="hint">At least 10 characters. This signs you out on every device.</p>
+      <button class="btn btn-lg btn-block" type="submit">Save new password</button>
+    </form>
+  </div>
 </section>` });
 }
 
@@ -676,10 +741,10 @@ router.get('/contact', async (c) => {
   const body = h`
 <section class="wrap narrow pad-lg">
   <p class="eyebrow">Contact</p>
-  <h1 class="display-md">Talk to the EZ DEV team.</h1>
+  <h1 class="display-md">Talk to the <em>EZ DEV team.</em></h1>
   <p class="lead">Questions, upgrades, partnerships or a security report: email us and a real person will reply.</p>
-  <div class="card">
-    <p><strong>Email</strong></p>
+  <div class="card glow-edge">
+    <p class="h3"><span class="icon-tile">${icons.mail}</span>Email us</p>
     <p><a class="big-link" href="mailto:${email}?subject=${encodeURIComponent(subject)}">${email}</a></p>
     ${user ? h`<p class="muted small">Please write from ${user.email} so we can find your account.</p>` : ''}
   </div>
@@ -695,7 +760,7 @@ function infoPage(title, intro, sections) {
   <p class="eyebrow">EZ DEV</p>
   <h1 class="display-md">${title}</h1>
   <p class="lead">${intro}</p>
-  ${sections(c.env).map(([hd, text]) => h`<h2 class="h3">${hd}</h2><p>${text}</p>`)}
+  <div class="card">${sections(c.env).map(([hd, text]) => h`<h2 class="h3">${hd}</h2><p>${text}</p>`)}</div>
 </section>`;
     return html(page({ env: c.env, product: 'ezdev', title, user, body, nav: NAV }));
   };

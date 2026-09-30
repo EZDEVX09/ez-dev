@@ -123,7 +123,7 @@ export function mountBuilder(router, cfg) {
   <div class="page-head">
     <div>
       <p class="eyebrow">Dashboard</p>
-      <h1 class="display-md">Your ${cfg.nounPlural}</h1>
+      <h1 class="display-md">Your <em>${cfg.nounPlural}</em></h1>
     </div>
     <div class="usage-pill" title="AI builds are shared between EZ APP and EZ SITE">
       <span>${used} / ${plan.aiGenerationsPerMonth} AI builds this month</span>
@@ -131,7 +131,7 @@ export function mountBuilder(router, cfg) {
     </div>
   </div>
   ${flash(err)}
-  <form class="card new-project" method="post" action="/projects">
+  <form class="card new-project glow-edge" method="post" action="/projects">
     <h2 class="h3">Start a new ${cfg.noun}</h2>
     <label for="prompt">Describe what you want. Be as specific as you like.</label>
     <textarea id="prompt" name="prompt" rows="4" maxlength="${MAX_PROMPT}" required placeholder="${cfg.placeholder}" ${prefill ? raw('autofocus') : ''}>${prefill}</textarea>

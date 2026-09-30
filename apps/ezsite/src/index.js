@@ -2,8 +2,8 @@
 
 import { h, html, serve } from '../../../shared/http.js';
 import { getUser } from '../../../shared/auth.js';
-import { page, errorPage, icons } from '../../../shared/ui.js';
-import { showcase } from '../../../shared/visuals.js';
+import { page, errorPage } from '../../../shared/ui.js';
+import { productLanding } from '../../../shared/landing.js';
 import { mountBuilder } from '../../../shared/builder.js';
 import { subsidiaryRouter } from '../../../shared/subsidiary.js';
 
@@ -39,47 +39,28 @@ const router = subsidiaryRouter('ezsite');
 
 router.get('/', async (c) => {
   const user = await getUser(c.req, c.env);
-  const start = user ? '/dashboard' : '/auth/start?next=/dashboard';
-  const body = h`
-<section class="hero wrap">
-  <p class="pill reveal"><span class="dot"></span>EZ SITE · an EZ DEV company</p>
-  <h1 class="display-xl reveal reveal-2">Your website, <span class="accent-text">written and designed for you.</span></h1>
-  <p class="lead reveal reveal-3">Tell EZ SITE about your business. It plans the pages, writes the copy, designs every screen and puts it online with one click.</p>
-  <div class="cta-row reveal reveal-3">
-    <a class="btn btn-lg" href="${start}">Build my website ${icons.arrow}</a>
-    <a class="btn btn-ghost btn-lg" href="#how">How it works</a>
-  </div>
-  ${showcase('ezsite')}
-</section>
-
-<section id="how" class="wrap pad-lg">
-  <div class="section-head"><p class="eyebrow">How it works</p><h2 class="display-md">Launch in an afternoon, not a month.</h2></div>
-  <ol class="steps">
-    <li class="card"><span class="step-n">1</span><h3 class="h3">Tell us about you</h3><p>What you do, who you serve and the pages you need.</p></li>
-    <li class="card"><span class="step-n">2</span><h3 class="h3">Review the draft</h3><p>A complete multi-page site with real copy, ready to preview on any screen size.</p></li>
-    <li class="card"><span class="step-n">3</span><h3 class="h3">Edit &amp; publish</h3><p>Ask for changes in plain words, then publish it to a live address.</p></li>
-  </ol>
-</section>
-
-<section id="features" class="wrap pad-lg">
-  <div class="section-head"><p class="eyebrow">Features</p><h2 class="display-md">Everything a small business site needs.</h2></div>
-  <ul class="example-grid">
-    <li class="card"><h3 class="h3">Multi-page sites</h3><p>Home, about, services, contact and more, with shared navigation.</p></li>
-    <li class="card"><h3 class="h3">Copy that fits</h3><p>Written from your details, with clear placeholders where facts are missing.</p></li>
-    <li class="card"><h3 class="h3">Version history</h3><p>Every change is saved. Roll back any time.</p></li>
-    <li class="card"><h3 class="h3">Take it with you</h3><p>Download the full site as plain HTML and CSS whenever you like.</p></li>
-  </ul>
-</section>
-
-<section class="wrap pad-lg">
-  <div class="cta-band card">
-    <div>
-      <h2 class="display-sm">Keep your site safe with EZ DEFENDER.</h2>
-      <p class="muted">Scan any published site for security issues, included with your EZ DEV account.</p>
-    </div>
-    <a class="btn btn-lg" href="${start}">Get started</a>
-  </div>
-</section>`;
+  const body = productLanding({
+    env: c.env, user, product: 'ezsite',
+    title: h`Your website,<br><em>written and designed for you.</em>`,
+    lead: 'Tell EZ SITE about your business. It plans the pages, writes the copy, designs every screen and puts it online with one click.',
+    quick: { name: 'prompt', label: 'Describe your business', placeholder: 'A website for my bakery with a menu and opening hours…', button: 'Make it' },
+    note: 'Free to start · Multi-page sites · Publish or download any time',
+    stepsHead: { eyebrow: 'How it works', title: h`Launch in an afternoon, <em>not a month.</em>`, text: 'EZ SITE does the planning, writing and design. You make the calls.' },
+    steps: [
+      ['Tell us about you', 'What you do, who you serve and the pages you need.'],
+      ['Review the draft', 'A complete multi-page site with real copy, ready to preview on any screen size.'],
+      ['Edit & publish', 'Ask for changes in plain words, then publish it to a live address.'],
+    ],
+    featuresHead: { eyebrow: 'Features', title: h`Everything a small business site <em>needs.</em>` },
+    features: [
+      ['layers', 'Multi-page sites', 'Home, about, services, contact and more, with shared navigation.'],
+      ['spark', 'Copy that fits', 'Written from your details, with clear placeholders where facts are missing.'],
+      ['history', 'Version history', 'Every change is saved. Roll back any time.'],
+      ['download', 'Take it with you', 'Download the full site as plain HTML and CSS whenever you like.'],
+    ],
+    cross: { product: 'ezdefender', title: 'Keep your site safe with EZ DEFENDER.', text: 'Scan any published site for security issues, included with your EZ DEV account.', label: 'Visit EZ DEFENDER' },
+    cta: { title: h`Your business deserves <em>a great website.</em>`, text: 'Describe it once. EZ SITE handles the rest.', label: 'Build my website' },
+  });
   return html(page({ env: c.env, product: 'ezsite', user, body, nav: NAV, description: 'EZ SITE writes, designs and publishes your website from a short description.' }));
 });
 

@@ -73,7 +73,7 @@ test('landing pages render with security headers', async () => {
     assert.equal(res.headers.get('X-Content-Type-Options'), 'nosniff');
   }
   const home = await (await b.get(`${DEV}/`)).text();
-  for (const p of ['EZ APP', 'EZ SITE', 'EZ DEFENDER', 'PARENT COMPANY']) assert.ok(home.includes(p), p);
+  for (const p of ['EZ APP', 'EZ SITE', 'EZ DEFENDER', 'parent company']) assert.ok(home.includes(p), p);
   const css = await b.get(`${DEV}/assets/ez.css`);
   assert.equal(css.status, 200);
   for (const path of ['/pricing', '/contact', '/privacy', '/terms', '/security', '/.well-known/security.txt', '/login', '/signup']) {
@@ -87,7 +87,7 @@ test('sign up, sign in, validation and rate limits', async () => {
   const { email, password } = await signup(b, { name: 'Grace Hopper' });
   const dash = await b.get(`${DEV}/dashboard`);
   assert.equal(dash.status, 200);
-  assert.ok((await dash.text()).includes('Hi, Grace'));
+  assert.ok((await dash.text()).includes('Hi, <em>Grace'));
 
   const dup = await new Browser(stack).post(`${DEV}/signup`, { form: { name: 'X', email, password, terms: '1' } });
   assert.equal(dup.status, 409);
