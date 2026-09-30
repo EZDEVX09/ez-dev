@@ -102,5 +102,5 @@ for (const app of APPS) {
 console.log(`Configured ${APPS.length} workers${domain ? ` for ${domain}` : subdomain ? ` on ${subdomain}.workers.dev` : ' for local dev'} (D1 ${dbId}).`);
 for (const [k, v] of Object.entries(vars)) if (k.endsWith('_URL')) console.log(`  ${k.padEnd(15)} ${v}`);
 if (process.env.GITHUB_OUTPUT) {
-  writeFileSync(process.env.GITHUB_OUTPUT, `ezdev_url=${vars.EZDEV_URL}\n`, { flag: 'a' });
+  writeFileSync(process.env.GITHUB_OUTPUT, `ezdev_url=${vars.EZDEV_URL}\nurls=${[vars.EZDEV_URL, vars.EZAPP_URL, vars.EZSITE_URL, vars.EZDEFENDER_URL].join(' ')}\n`, { flag: 'a' });
 }
